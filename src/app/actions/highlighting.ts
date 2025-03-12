@@ -1,20 +1,23 @@
+"use server";
 /**
  * This function is meant to find out which cluster members are new in order to be highlighted. The newer they are, the more they are getting highlighted.
  *
  * @returns a list of information on which dimensions should be highlighted with opacity, already sorted by clusters.
  */
-export const highlighter = (
+export const highlighter = async (
   aggregated: Record<string, number>[][],
   clusterAssignment: [string, number][],
   clusterAssignmentHistory: {
     timestamp: number;
     entries: [string, number][];
   }[]
-): {
-  dimension: string;
-  opacity: number;
-  lastDimension: number | undefined;
-}[][] => {
+): Promise<
+  {
+    dimension: string;
+    opacity: number;
+    lastDimension: number | undefined;
+  }[][]
+> => {
   const aggregatedHighlightInfo: {
     dimension: string;
     opacity: number;

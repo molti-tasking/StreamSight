@@ -1,11 +1,12 @@
+"use server";
 /**
  * DBSCAN-based clustering function to group data points based on density.
  *
  */
-export const clusteringDBSCAN = (
+export const clusteringDBSCAN = async (
   values: [string, Record<number, number>][],
   eps: number
-): [string, Record<number, number>][][] => {
+): Promise<[string, Record<number, number>][][]> => {
   const clusters: [string, Record<number, number>][][] = [];
 
   const visited = new Array(values.length).fill(false);

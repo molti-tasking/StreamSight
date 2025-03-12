@@ -2,7 +2,7 @@
 import { expect, test } from "vitest";
 import { aggregator } from "./clustering.js";
 import { aggregatorUnused } from "./clusteringUnused.js";
-import { DataProcessingSettings } from "./settings/DataProcessingSettings.js";
+import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings.js";
 /*
 test("Test the regrouping", () => {
   const input = [

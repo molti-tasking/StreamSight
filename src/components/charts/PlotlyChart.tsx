@@ -1,7 +1,11 @@
+"use client";
 import { cn } from "@/lib/utils";
 import { Layout } from "plotly.js";
-import Plot from "react-plotly.js";
+
 import { ChartProps } from "./ChartProps";
+import dynamic from "next/dynamic";
+
+const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 export const PlotlyChart = ({ values, yDomain, className }: ChartProps) => {
   const dimensions = values.length

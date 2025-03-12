@@ -18,7 +18,7 @@ export function VisualizationPreferencesPopover() {
           <ChevronDownIcon /> Configure Presentation
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="max-w-screen-sm w-full z-[2000]">
+      <PopoverContent className="max-w-(--breakpoint-sm) w-full z-2000">
         <VisualizationSettingsForm onClose={() => setOpen(false)} />
       </PopoverContent>
     </Popover>

@@ -1,4 +1,6 @@
-import { DataProcessingSettings } from "./settings/DataProcessingSettings";
+"use server";
+
+import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings";
 
 type AggregatedProps = {
   aggregated: Record<string, number>[][];

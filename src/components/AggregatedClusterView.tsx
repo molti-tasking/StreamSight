@@ -52,7 +52,7 @@ export const AggregatedClusterView = () => {
           <div
             key={`${groupIndex}-${timestamp}`}
             className={cn(
-              "flex flex-1 flex-col flex-shrink items-center overflow-hidden ",
+              "flex flex-1 flex-col shrink items-center overflow-hidden ",
               groupIndex > 0 ? "border-l-[0.5px] border-white" : "rounded-l-sm"
             )}
           >

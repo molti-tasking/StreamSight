@@ -1,6 +1,7 @@
+"use server";
 import { ExplorationEvent } from "@/store/useExploratoryStore";
 
-const OPENAI_API_KEY = process.env.VITE_OPENAI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 console.log("Open api key ", OPENAI_API_KEY);
 
 export async function fetchResearchCompletion(

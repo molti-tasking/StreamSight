@@ -1,6 +1,6 @@
 import { aggregator } from "./clustering.js";
 import { aggregatorUnused } from "./clusteringUnused.js";
-import { DataProcessingSettings } from "./settings/DataProcessingSettings.js";
+import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings.js";
 
 const inputValues = [
   {

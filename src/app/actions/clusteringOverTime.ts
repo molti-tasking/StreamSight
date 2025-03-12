@@ -1,5 +1,7 @@
+"use server";
+
 import { clusteringData } from "./clusteringData";
-import { DataProcessingSettings } from "./settings/DataProcessingSettings";
+import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings";
 
 export type ClusterView = { timestamp: string; clusters: [string, number][] };
 
@@ -18,11 +20,11 @@ type ClusteringReturn = {
  * @param settings containing parameters that define how the data should be processed and grouped.
  * @returns
  */
-export const clusteringOverTime = (
+export const clusteringOverTime = async (
   rawData: Record<string, number>[],
   dimensions: string[],
   settings: DataProcessingSettings
-): ClusteringReturn => {
+): Promise<ClusteringReturn> => {
   // First we gonna define the return type. Then we gonna skip the first settings.dataTicks - 1 values in order to build the first cluster based on those. Then we iterate over the full list afterwards
   const returnValues: ClusterView[] = [];
 

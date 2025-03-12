@@ -62,7 +62,7 @@ const HistoryBars = () => {
 
 const LegendBar = ({ entries }: { entries: [string, number][] }) => {
   return (
-    <div className="flex flex-row flex-shrink items-center  overflow-hidden">
+    <div className="flex flex-row shrink items-center  overflow-hidden">
       {entries.map(([name, styleGroup], index) => (
         <TooltipProvider key={`${name}-${index}`}>
           <Tooltip>

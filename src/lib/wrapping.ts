@@ -1,7 +1,7 @@
 import { findCommonElements } from "./findCommonElements";
 import { DataProcessingSettings } from "./settings/DataProcessingSettings";
 
-export const dataWrappingProcess = (
+export const dataWrappingProcess = async (
   aggregated: Record<string, number>[][],
   settings: DataProcessingSettings
 ) => {

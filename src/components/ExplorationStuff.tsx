@@ -62,7 +62,7 @@ export const ExplorationStuff = () => {
           </div>
         )}
         <DialogFooter>
-          <DialogClose>
+          <DialogClose asChild>
             <Button
               variant={"secondary"}
               onClick={() => activateIdeaSelection()}

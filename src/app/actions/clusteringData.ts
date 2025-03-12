@@ -1,7 +1,8 @@
+"use server";
 import { clusteringDBSCAN } from "./clusteringDBSCAN";
-import { DataProcessingSettings } from "./settings/DataProcessingSettings";
+import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings";
 
-export const clusteringData = (
+export const clusteringData = async (
   dataToBeClustered: Record<string, number>[],
   dimensions: string[],
   settings: DataProcessingSettings
@@ -32,10 +33,8 @@ export const clusteringData = (
     );
 
     // We let the clustering algorithm do the magic and return us the clusters.
-    const clusters: [string, Record<number, number>][][] = clusteringDBSCAN(
-      allTimeSeries,
-      settings.eps
-    );
+    const clusters: [string, Record<number, number>][][] =
+      await clusteringDBSCAN(allTimeSeries, settings.eps);
 
     const timelineNameCount = clusters.reduce(
       (prev, curr) => prev + curr.length,

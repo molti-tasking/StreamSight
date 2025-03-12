@@ -1,18 +1,10 @@
-import Link from 'next/link';
-import { ExplorationStuff } from './ExplorationStuff';
-import { DataSettingsPopover } from './forms/DataSettingsPopover';
-import { Toaster } from './ui/toaster';
+import Link from "next/link";
+import { ExplorationStuff } from "./ExplorationStuff";
+import { DataSettingsPopover } from "./forms/DataSettingsPopover";
+import { Toaster } from "./ui/toaster";
 
 export default function Navigation() {
-  const routes = [
-    { title: "Home", href: "/" },
-    { title: "Streamclusters", href: "/streamclusters" },
-    { title: "3D", href: "/anu" },
-    { title: "Multi Line", href: "/multi-line" },
-    { title: "Aggregation", href: "/aggregated-line" },
-    { title: "Multi Aggregation", href: "/multi-aggregated-line" },
-    { title: "Tree Map", href: "/multi-aggregated-treemap" },
-  ];
+  const routes = [{ title: "Streamclusters", href: "/streamclusters" }];
 
   return (
     <>

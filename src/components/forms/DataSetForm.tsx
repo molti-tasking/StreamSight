@@ -24,6 +24,7 @@ import { z } from "zod";
 import { FormSubmitButton } from "../FormSubmitButton";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import Link from "next/link";
 
 const formSchema = z.object({
   dataSet: z.enum(["S&P500", "GDP", "peak-simulation"]),
@@ -97,8 +98,12 @@ export const DataSetForm = () => {
           onClick={() => alert("streamclusters")}
           variant={"link"}
           className="gap-1 hover:gap-2 transition-all"
+          asChild
         >
-          Streamclusters <ArrowRightIcon />
+          <Link href={"/streamclusters"}>
+            Streamclusters
+            <ArrowRightIcon />
+          </Link>
         </Button>
       ),
       //   description: (

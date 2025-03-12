@@ -1,12 +1,14 @@
-import { ClusteringWorker } from "@/lib/clustering.worker";
-import { ClusterView } from "@/lib/clusteringOverTime";
-import * as Comlink from "comlink";
+import {
+  clusteringOverTime,
+  ClusterView,
+} from "@/app/actions/clusteringOverTime";
 import _ from "lodash";
 import { create } from "zustand";
-import Worker from "../lib/clustering.worker?worker";
 import { useClusterProcessingSettingsStore } from "./ClusterProcessingSettingsStore";
 import { useRawDataStore } from "./useRawDataStore";
 import { useStreamClustersSettingsStore } from "./useStreamClustersSettingsStore";
+import { highlighter } from "@/app/actions/highlighting";
+import { aggregator } from "@/app/actions/clustering";
 
 interface DataStore {
   aggregated: Record<string, number>[][];
@@ -31,9 +33,6 @@ interface DataStore {
   processClustersInTimeData: () => void;
 }
 
-const workerInstance = new Worker({ name: "aggregator" });
-const workerApi = Comlink.wrap<ClusteringWorker>(workerInstance);
-
 export const useViewModelStore = create<DataStore>((set, get) => {
   console.log("init view model store");
 
@@ -49,7 +48,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     const { updateSettings: update, ...dataProcessingSettings } =
       useClusterProcessingSettingsStore.getState();
     console.log("Settings: ", update);
-    const aggregated = await workerApi.aggregator(
+    const aggregated = await aggregator(
       values,
       dimensions,
       dataProcessingSettings
@@ -57,7 +56,8 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     console.timeEnd(
       "ViewModel basic data process duration " + String(timerName)
     );
-    const lastTimestamp = values[values.length - 1]["timestamp"] ?? Date.now();
+    const lastTimestamp =
+      values?.[values.length - 1]?.["timestamp"] ?? Date.now();
     const clusterAssignment: [string, number][] = aggregated.clusterAssignment;
 
     const clusterAssignmentHistory = get().clusterAssignmentHistory;
@@ -71,7 +71,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       lastDimension: number | undefined;
     }[][] = [];
     if (streamClusterSettings.chartMode === "highlighted") {
-      highlightInfo = await workerApi.highlighter(
+      highlightInfo = await highlighter(
         aggregated.aggregated,
         clusterAssignment,
         updatedClusterAssignmentHistory.slice(
@@ -103,7 +103,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       useClusterProcessingSettingsStore.getState();
     console.log("Settings: ", update);
 
-    const { clustersInTime } = await workerApi.clusteringOverTime(
+    const { clustersInTime } = await clusteringOverTime(
       values,
       dimensions,
       dataProcessingSettings

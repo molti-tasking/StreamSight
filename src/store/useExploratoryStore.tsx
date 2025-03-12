@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { ToastAction } from "@/components/ui/toast";
 import { toast } from "@/hooks/use-toast";
-import { fetchResearchCompletion } from "@/lib/ai-chat";
+import { fetchResearchCompletion } from "@/app/actions/ai-chat";
 import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
 import { useState } from "react";
 import { create } from "zustand";
