@@ -14,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +24,7 @@ import { FormSubmitButton } from "../FormSubmitButton";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import Link from "next/link";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   dataSet: z.enum(["S&P500", "GDP", "peak-simulation"]),
@@ -88,9 +88,8 @@ export const DataSetForm = () => {
     } else {
       loadDataset(data.dataSet);
     }
-    toast({
-      variant: "success",
-      title: "🎉 Great Choice",
+    toast("🎉 Great Choice", {
+      className: "bg-green-400",
       description: "Let's monitor that data with Streamclusters",
       action: (
         <Button

@@ -1,10 +1,10 @@
 import { Input } from "@/components/ui/input";
-import { ToastAction } from "@/components/ui/toast";
-import { toast } from "@/hooks/use-toast";
 import { fetchResearchCompletion } from "@/app/actions/ai-chat";
 import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
 import { useState } from "react";
 import { create } from "zustand";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export type ExplorationEvent = {
   userMessage?: string | undefined;
@@ -46,19 +46,8 @@ const FeedbackForm = ({
         />
       </div>
       <div className="flex flex-row gap-1 items-center">
-        <ToastAction
-          onClick={() => onSubmitFeedback(true, feedback)}
-          altText="Good"
-        >
-          Good
-        </ToastAction>
-
-        <ToastAction
-          onClick={() => onSubmitFeedback(false, feedback)}
-          altText="Bad"
-        >
-          Bad
-        </ToastAction>
+        <Button onClick={() => onSubmitFeedback(true, feedback)}>Good</Button>
+        <Button onClick={() => onSubmitFeedback(false, feedback)}>Bad</Button>
       </div>
     </div>
   );
@@ -82,8 +71,7 @@ export const useExploratoryStore = create<DataStore>((set, get) => {
       set({ events: newUserEvents });
     };
 
-    toast({
-      title: "You updated the view settings.",
+    toast("You updated the view settings.", {
       description: "How helpful was it?",
       action: <FeedbackForm onSubmitFeedback={onSubmitFeedback} />,
     });

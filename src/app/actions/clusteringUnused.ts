@@ -110,7 +110,7 @@ export const aggregatorUnused = (
  * @param groups The length of the return array.
  * @returns A list of list of records. Each record should have again the timestamp value but the further values should be distributed evenly across the list of records.
  */
-const clustering = (
+export const clustering = (
   values: Record<string, number>[],
   groups: number
 ): Record<string, number>[][] => {
