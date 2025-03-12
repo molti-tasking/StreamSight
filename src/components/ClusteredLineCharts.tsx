@@ -132,3 +132,5 @@ const Charts = memo(() => {
     </>
   );
 });
+
+Charts.displayName = "Charts";

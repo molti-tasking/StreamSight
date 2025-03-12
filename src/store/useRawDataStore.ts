@@ -42,6 +42,7 @@ export const useRawDataStore = create<DataStore>((set, get) => {
         console.log("Yielded next entry of the data timeline: ", dataEntry);
 
         const { values: prevValues, dimensions } = get();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const newValues = [...(prevValues as any[]), dataEntry];
         console.log("New values length: ", newValues.length);
 
