@@ -60,7 +60,11 @@ export const clusteringOverTime = async (
         ? String(rawData[dataEntryIndex].timestamp)
         : "";
 
-    const aggregated = clusteringData(dataToBeClustered, dimensions, settings);
+    const aggregated = await clusteringData(
+      dataToBeClustered,
+      dimensions,
+      settings
+    );
 
     const clusters: [string, number][] = dimensions.map((val) => [
       val,
