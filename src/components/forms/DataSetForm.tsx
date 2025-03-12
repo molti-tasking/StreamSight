@@ -78,7 +78,6 @@ export const DataSetForm = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    console.log("Submitted");
     if (data.dataSet === "peak-simulation") {
       updateData(
         "peaks",
@@ -95,7 +94,6 @@ export const DataSetForm = () => {
       description: "Let's monitor that data with Streamclusters",
       action: (
         <Button
-          onClick={() => alert("streamclusters")}
           variant={"link"}
           className="gap-1 hover:gap-2 transition-all"
           asChild
@@ -106,16 +104,6 @@ export const DataSetForm = () => {
           </Link>
         </Button>
       ),
-      //   description: (
-      //     <div>
-      //       <span>Let's monitor that data with Streamclusters</span>
-      //       <div className="flex flex-row-reverse mt-2">
-      //         <Button onClick={() => redirect("streamclusters")}>
-      //           Open Streamclusters
-      //         </Button>
-      //       </div>
-      //     </div>
-      //   ),
     });
   };
 
@@ -123,7 +111,7 @@ export const DataSetForm = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit, console.log)}
-        className="max-w-2xl py-8"
+        className="max-w-2xl pb-8"
       >
         <FormField
           control={form.control}

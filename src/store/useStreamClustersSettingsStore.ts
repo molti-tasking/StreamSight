@@ -11,7 +11,7 @@ export const useStreamClustersSettingsStore =
   create<StreamClustersSettingsStore>((set, get) => {
     return {
       layoutMode: "list",
-      treeMapSignificanceMode: "clusterSize",
+      treemapSignificanceMode: "clusterSize",
       chartMode: "multiline",
       showClusterAssignments: true,
       clusterAssignmentHistoryDepth: 5,

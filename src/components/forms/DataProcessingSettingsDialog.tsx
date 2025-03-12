@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { DataProcessingSettingsForm } from "./DataProcessingSettingsForm";
+import { SettingsIcon } from "lucide-react";
 
 export function DataProcessingSettingsDialog() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -16,7 +17,9 @@ export function DataProcessingSettingsDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={(isOpen) => setIsOpen(isOpen)}>
       <DialogTrigger asChild>
-        <Button variant="light">Data Processing</Button>
+        <Button variant="light">
+          <SettingsIcon /> Processing
+        </Button>
       </DialogTrigger>
       <DialogContent className="lg:max-w-3xl">
         <DialogHeader>

@@ -12,9 +12,11 @@ export default function Navigation() {
       <nav className="bg-primary text-primary-foreground py-2">
         <div className="container flex items-center flex-wrap justify-between gap-x-6 gap-y-2">
           <div className="text-white flex items-center gap-4">
-            <span className="font-semibold text-xl tracking-tight">
-              Stream Sight
-            </span>
+            <Link href={"/"}>
+              <span className="font-semibold text-xl tracking-tight">
+                Stream Sight
+              </span>
+            </Link>
             <ExplorationStuff />
           </div>
 

@@ -6,7 +6,9 @@ import {
   ClusteredLineChartList,
 } from "@/components/ClusteredLineCharts";
 import { ClusterLegend } from "@/components/ClusterLegend";
+import { ExplorationStuff } from "@/components/ExplorationStuff";
 import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
+import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import { VisualizationSettingsDialog } from "@/components/forms/VisualizationSettingsDialog";
 import MutliAggregatedTreeMap from "@/components/MutliAggregatedTreeMap";
 import { Button } from "@/components/ui/button";
@@ -14,25 +16,43 @@ import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSett
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
+import Link from "next/link";
 import { useEffect } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 export default function StreamClustersPage() {
   const aggregated = useViewModelStore((store) => store.aggregated);
   return (
-    <div className="container w-full py-2 flex flex-col flex-wrap gap-2 h-full">
-      <div className="flex flex-row justify-between gap-4 items-center">
-        <div className="text-muted-foreground">
-          Detected {aggregated.length} clusters.
+    <div>
+      <div className="flex flex-row justify-between border-b">
+        <div className="text-white px-4 py-2 flex flex-col justify-between">
+          <div className="flex items-center gap-8">
+            <Link href={"/"} className="bg-primary p-4 rounded-2xl">
+              <span className="font-semibold text-xl tracking-tight">
+                Stream Sight
+              </span>
+            </Link>
+            <ExplorationStuff />
+          </div>
+          <div className="flex flex-row justify-between gap-4 items-center my-2">
+            <div className="flex flex-row gap-2">
+              <DataProcessingSettingsDialog />
+              {/* <VisualizationSettingsDialog /> */}
+            </div>
+            <div className="text-muted-foreground">
+              {aggregated.length} clusters
+            </div>
+          </div>
         </div>
-        <div className="flex flex-row gap-2">
-          <DataProcessingSettingsDialog />
-          <VisualizationSettingsDialog />
+        <StreamClustersBar />
+      </div>
+      <div className="w-full flex flex-1" style={{ overflow: "overlay" }}>
+        <div className="container w-full py-2 flex flex-col flex-wrap gap-2 h-full">
+          <ErrorBoundary fallbackRender={ResetErrorBoundary}>
+            <StreamClusters />
+          </ErrorBoundary>
         </div>
       </div>
-      <ErrorBoundary fallbackRender={ResetErrorBoundary}>
-        <StreamClusters />
-      </ErrorBoundary>
     </div>
   );
 }
@@ -63,7 +83,7 @@ const ChartViewDisplay = () => {
     return <ClusteredLineChartGrid />;
   } else if (layoutMode === "list") {
     return <ClusteredLineChartList />;
-  } else if (layoutMode === "treeMap") {
+  } else if (layoutMode === "treemap") {
     return <MutliAggregatedTreeMap />;
   }
   return (

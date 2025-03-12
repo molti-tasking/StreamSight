@@ -33,7 +33,7 @@ export const ExplorationStuff = () => {
   return (
     <Dialog>
       <DialogTrigger>
-        <StarsIcon />
+        <StarsIcon className="cursor-pointer text-primary" />
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
         <DialogHeader>

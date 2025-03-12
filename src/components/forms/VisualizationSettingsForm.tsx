@@ -22,14 +22,14 @@ import { Switch } from "../ui/switch";
 
 const layoutViewOptions: Record<StreamClustersSettings["layoutMode"], string> =
   {
-    treeMap: "Tree Map",
+    treemap: "Treemap",
     grid: "Grid",
     list: "List",
     clusterMap: "Cluster Map",
   };
 
-const treeMapViewOptions: Record<
-  StreamClustersSettings["treeMapSignificanceMode"],
+const treemapViewOptions: Record<
+  StreamClustersSettings["treemapSignificanceMode"],
   string
 > = {
   clusterSize: "Cluster size",
@@ -103,22 +103,22 @@ export const VisualizationSettingsForm = ({
                     </TabsList>
 
                     <TabsContent
-                      value={"treeMap"}
+                      value={"treemap"}
                       className="grid w-full gap-2"
                     >
                       <FormField
                         control={form.control}
-                        name="treeMapSignificanceMode"
+                        name="treemapSignificanceMode"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Tree Map Significance Mode</FormLabel>
+                            <FormLabel>treemap Significance Mode</FormLabel>
                             <FormControl>
                               <Tabs
                                 value={field.value}
                                 onValueChange={(mode) => field.onChange(mode)}
                               >
                                 <TabsList>
-                                  {Object.entries(treeMapViewOptions).map(
+                                  {Object.entries(treemapViewOptions).map(
                                     ([key, label]) => (
                                       <TabsTrigger value={key} key={key}>
                                         {label}

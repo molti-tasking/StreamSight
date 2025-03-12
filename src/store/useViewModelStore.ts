@@ -44,9 +44,10 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     const values = useRawDataStore.getState().values;
     const { updateSettings, ...streamClusterSettings } =
       useStreamClustersSettingsStore.getState();
-    console.log("Settings: ", streamClusterSettings);
+    console.log("Stream Cluster Settings: ", streamClusterSettings);
     const { updateSettings: update, ...dataProcessingSettings } =
       useClusterProcessingSettingsStore.getState();
+    console.log("Data Processing Settings: ", dataProcessingSettings);
     console.log("Settings: ", update);
     const aggregated = await aggregator(
       values,
@@ -56,13 +57,17 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     console.timeEnd(
       "ViewModel basic data process duration " + String(timerName)
     );
+    console.log("Found amount of clusters: ", aggregated.aggregated.length);
     const lastTimestamp =
       values?.[values.length - 1]?.["timestamp"] ?? Date.now();
     const clusterAssignment: [string, number][] = aggregated.clusterAssignment;
 
     const clusterAssignmentHistory = get().clusterAssignmentHistory;
     const updatedClusterAssignmentHistory = clusterAssignmentHistory
-      .toSpliced(0, 0, { timestamp: lastTimestamp, entries: clusterAssignment })
+      .toSpliced(0, 0, {
+        timestamp: lastTimestamp,
+        entries: clusterAssignment,
+      })
       .slice(0, 20);
 
     let highlightInfo: {
