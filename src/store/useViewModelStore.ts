@@ -44,7 +44,11 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     const values = useRawDataStore.getState().values;
     const { updateSettings, ...streamClusterSettings } =
       useStreamClustersSettingsStore.getState();
-    console.log("Stream Cluster Settings: ", streamClusterSettings);
+    console.log(
+      "Stream Cluster Settings: ",
+      streamClusterSettings,
+      updateSettings
+    );
     const { updateSettings: update, ...dataProcessingSettings } =
       useClusterProcessingSettingsStore.getState();
     console.log("Data Processing Settings: ", dataProcessingSettings);
@@ -103,10 +107,14 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     const values = useRawDataStore.getState().values;
     const { updateSettings, ...streamClusterSettings } =
       useStreamClustersSettingsStore.getState();
-    console.log("Settings: ", streamClusterSettings);
+    console.log(
+      "Stream cluster settings: ",
+      streamClusterSettings,
+      updateSettings
+    );
     const { updateSettings: update, ...dataProcessingSettings } =
       useClusterProcessingSettingsStore.getState();
-    console.log("Settings: ", update);
+    console.log("Data processing settings: ", update);
 
     const { clustersInTime } = await clusteringOverTime(
       values,

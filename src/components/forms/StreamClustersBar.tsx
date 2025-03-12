@@ -26,7 +26,6 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { Badge } from "../ui/badge";
-import { Settings } from "lucide-react";
 
 type LayoutMode = StreamClustersSettings["layoutMode"];
 type TreemapMode = StreamClustersSettings["treemapSignificanceMode"];

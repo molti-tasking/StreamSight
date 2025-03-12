@@ -9,7 +9,6 @@ import { ClusterLegend } from "@/components/ClusterLegend";
 import { ExplorationStuff } from "@/components/ExplorationStuff";
 import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
-import { VisualizationSettingsDialog } from "@/components/forms/VisualizationSettingsDialog";
 import MutliAggregatedTreeMap from "@/components/MutliAggregatedTreeMap";
 import { Button } from "@/components/ui/button";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
