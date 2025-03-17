@@ -155,11 +155,11 @@ export const StreamClustersBar = () => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Label>
-                      Layers{" "}
+                    <Label className="flex flex-row justify-between items-center gap-1.5">
+                      <span>Layers</span>
                       <Badge
                         variant={"secondary"}
-                        className="rounded-full h-4 w-4 text-[12px] ml-1.5"
+                        className="rounded-full h-4 w-4 text-[12px] m-1"
                       >
                         ?
                       </Badge>

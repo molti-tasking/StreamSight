@@ -6,7 +6,6 @@ import {
   ClusteredLineChartList,
 } from "@/components/ClusteredLineCharts";
 import { ClusterLegend } from "@/components/ClusterLegend";
-import { ExplorationStuff } from "@/components/ExplorationStuff";
 import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import MutliAggregatedTreeMap from "@/components/MutliAggregatedTreeMap";
@@ -31,7 +30,7 @@ export default function StreamClustersPage() {
                 Stream Sight
               </span>
             </Link>
-            <ExplorationStuff />
+            {/* <ExplorationStuff /> */}
           </div>
           <div className="flex flex-row justify-between gap-4 items-center my-2">
             <div className="flex flex-row gap-2">
@@ -45,8 +44,8 @@ export default function StreamClustersPage() {
         </div>
         <StreamClustersBar />
       </div>
-      <div className="w-full flex flex-1" style={{ overflow: "overlay" }}>
-        <div className="w-full p-2 flex flex-col flex-wrap gap-2 h-full">
+      <div className="w-screen flex flex-1" style={{ overflow: "overlay" }}>
+        <div className="w-screen p-2 flex flex-col flex-wrap gap-2 h-full">
           <ErrorBoundary fallbackRender={ResetErrorBoundary}>
             <StreamClusters />
           </ErrorBoundary>

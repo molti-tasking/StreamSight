@@ -21,10 +21,9 @@ import { ArrowRightIcon } from "lucide-react";
 import { ControllerRenderProps, useForm } from "react-hook-form";
 import { z } from "zod";
 import { FormSubmitButton } from "../FormSubmitButton";
-import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import Link from "next/link";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   dataSet: z.enum(["S&P500", "GDP", "peak-simulation"]),
@@ -38,6 +37,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export const DataSetForm = () => {
+  const router = useRouter();
   const dimensions = useRawDataStore((state) => state.dimensions);
   const values = useRawDataStore((state) => state.values);
   const streamingInterval = useRawDataStore((state) => state.streamingInterval);
@@ -91,19 +91,8 @@ export const DataSetForm = () => {
     toast("🎉 Great Choice", {
       className: "bg-green-400",
       description: "Let's monitor that data with Streamclusters",
-      action: (
-        <Button
-          variant={"link"}
-          className="gap-1 hover:gap-2 transition-all"
-          asChild
-        >
-          <Link href={"/streamclusters"}>
-            Streamclusters
-            <ArrowRightIcon />
-          </Link>
-        </Button>
-      ),
     });
+    router.push("/streamclusters");
   };
 
   return (
@@ -153,6 +142,7 @@ export const DataSetForm = () => {
                           <Input
                             type="number"
                             placeholder="Colums"
+                            onClick={(e) => e.stopPropagation()}
                             {...field}
                           />
                         </FormControl>
@@ -170,7 +160,12 @@ export const DataSetForm = () => {
                       <FormItem>
                         <FormLabel>Rows</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="Rows" {...field} />
+                          <Input
+                            type="number"
+                            placeholder="Rows"
+                            onClick={(e) => e.stopPropagation()}
+                            {...field}
+                          />
                         </FormControl>
                         <FormDescription>
                           This is the amount of timestamps for each time series
@@ -189,6 +184,7 @@ export const DataSetForm = () => {
                           <Input
                             type="number"
                             placeholder="Streaming Interval"
+                            onClick={(e) => e.stopPropagation()}
                             {...field}
                           />
                         </FormControl>

@@ -29,7 +29,7 @@ export default function MutliAggregatedTreeMap() {
 
   console.log("Render aggregated treemap");
   return (
-    <div ref={ref} className="flex-1">
+    <div ref={ref} className="flex-1 min-h-20">
       <TreeMap
         key={aggregated.length}
         width={width}
