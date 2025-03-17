@@ -22,10 +22,16 @@ export const ClusterLegend = () => {
       className="flex flex-col w-full gap-1 cursor-pointer"
       onClick={() => setShowHistory((currValue) => !currValue)}
     >
-      {showHistory && <HistoryBars />}
-      <div className="w-full rounded-sm overflow-hidden opacity-70">
-        <LegendBar entries={clusterAssignment} />
-      </div>
+      {showHistory ? (
+        <HistoryBars />
+      ) : (
+        <div
+          className="w-full rounded-sm overflow-hidden opacity-70"
+          key={"single-legend-bar"}
+        >
+          <LegendBar entries={clusterAssignment} />
+        </div>
+      )}
     </div>
   );
 };
