@@ -15,7 +15,6 @@ import {
   dataProcessingSettingsSchema,
 } from "@/lib/settings/DataProcessingSettings";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
-import { useExploratoryStore } from "@/store/useExploratoryStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Checkbox } from "../ui/checkbox";
@@ -35,9 +34,9 @@ export const DataProcessingSettingsForm = ({
   onClose: () => void;
 }) => {
   const viewSettings = useClusterProcessingSettingsStore();
-  const addSettingUpdateEvent = useExploratoryStore(
-    (state) => state.addSettingUpdateEvent
-  );
+  // const addSettingUpdateEvent = useExploratoryStore(
+  //   (state) => state.addSettingUpdateEvent
+  // );
   const { updateSettings, ...settings } = viewSettings;
 
   const form = useForm<DataProcessingSettings>({
@@ -46,7 +45,7 @@ export const DataProcessingSettingsForm = ({
   });
 
   const onSubmit = (data: DataProcessingSettings) => {
-    addSettingUpdateEvent(settings, data);
+    // addSettingUpdateEvent(settings, data);
     updateSettings((prevSettings) => ({ ...prevSettings, ...data }));
 
     onClose();

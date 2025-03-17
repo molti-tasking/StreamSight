@@ -23,7 +23,7 @@ export default function StreamClustersPage() {
   const aggregated = useViewModelStore((store) => store.aggregated);
   return (
     <div>
-      <div className="flex flex-row justify-between border-b">
+      <div className="flex flex-row justify-between border-b overflow-x-scroll">
         <div className="text-white px-4 py-2 flex flex-col justify-between">
           <div className="flex items-center gap-8">
             <Link href={"/"} className="bg-primary p-4 rounded-2xl">
@@ -46,7 +46,7 @@ export default function StreamClustersPage() {
         <StreamClustersBar />
       </div>
       <div className="w-full flex flex-1" style={{ overflow: "overlay" }}>
-        <div className="container w-full py-2 flex flex-col flex-wrap gap-2 h-full">
+        <div className="w-full p-2 flex flex-col flex-wrap gap-2 h-full">
           <ErrorBoundary fallbackRender={ResetErrorBoundary}>
             <StreamClusters />
           </ErrorBoundary>
