@@ -1,4 +1,4 @@
-import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
+import { StreamClustersSettings } from "@/lib/settings/StreamClustersSettings";
 import { ClassValue } from "clsx";
 
 export type ChartProps = {
@@ -6,5 +6,5 @@ export type ChartProps = {
   className: ClassValue;
   yDomain: [number, number];
   saveScreenSpace?: boolean;
-  mode: DataProcessingSettings["mode"];
+  mode: StreamClustersSettings["chartMode"];
 };

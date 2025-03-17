@@ -9,7 +9,7 @@ import { useViewModelStore } from "@/store/useViewModelStore";
 import { useEffect, useRef } from "react";
 
 export default function MutliAggregatedTreeMap() {
-  const mode = useStreamClustersSettingsStore((state) => state.layoutMode);
+  const mode = useStreamClustersSettingsStore((state) => state.chartMode);
   const aggregated = useViewModelStore((data) => data.aggregated);
   const highlightInfo = useViewModelStore((state) => state.highlightInfo);
   const yDomain = useViewModelStore((state) => state.yDomain);

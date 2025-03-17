@@ -39,7 +39,6 @@ export const TreeMap = ({
 
   const buildTreemap = () => {
     console.log("Build treemap with leaves: ", props.leaves.length);
-    // Sample data (feel free to replace with your own)
     const data = {
       children: [
         ...props.leaves?.map((leaf) => ({
@@ -55,22 +54,30 @@ export const TreeMap = ({
     // 3. Optionally sort nodes based on descending value.
     const root = d3
       .hierarchy(data)
+      // @ts-expect-error typing needs to be fixed
       .sum((d) => d.size)
+      // @ts-expect-error typing needs to be fixed
       .sort((a, b) => b.value - a.value);
 
     // Initialize treemap layout
+    // @ts-expect-error typing needs to be fixed
     d3.treemap().size([width, height]).padding(4)(root);
     let newMaxWidth = 0;
     const newNodes = root.leaves()?.map((d) => {
+      // @ts-expect-error typing needs to be fixed
       const width = d.x1 - d.x0;
       if (width > newMaxWidth) {
         newMaxWidth = width;
       }
       return {
+        // @ts-expect-error typing needs to be fixed
         x: d.x0,
+        // @ts-expect-error typing needs to be fixed
         y: d.y0,
         width,
+        // @ts-expect-error typing needs to be fixed
         height: d.y1 - d.y0,
+        // @ts-expect-error typing needs to be fixed
         ClusterComponent: d.data.ClusterComponent,
       };
     });
@@ -92,11 +99,14 @@ export const TreeMap = ({
       .selectAll("g")
       .data(root.leaves())
       .join("g")
+      // @ts-expect-error typing needs to be fixed
       .attr("transform", (d) => `translate(${d.x0},${d.y0})`);
 
     leaves
       .append("rect")
+      // @ts-expect-error typing needs to be fixed
       .attr("width", (d) => d.x1 - d.x0)
+      // @ts-expect-error typing needs to be fixed
       .attr("height", (d) => d.y1 - d.y0)
       .attr("fill", () => "#eee")
       .attr("fill-opacity", 0.2);
