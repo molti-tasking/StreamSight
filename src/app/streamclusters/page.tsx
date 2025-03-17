@@ -22,7 +22,7 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 export default function StreamClustersPage() {
   const aggregated = useViewModelStore((store) => store.aggregated);
   return (
-    <div>
+    <>
       <div className="flex flex-row justify-between border-b overflow-x-scroll">
         <div className="text-white px-4 py-2 flex flex-col justify-between">
           <div className="flex items-center gap-8">
@@ -52,7 +52,7 @@ export default function StreamClustersPage() {
           </ErrorBoundary>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
