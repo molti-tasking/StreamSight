@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils";
 import { VegaLite, type VisualizationSpec } from "react-vega";
 import { clusterColors } from "../clusterColors";
 import { ChartProps } from "./ChartProps";
+import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
+import { UnitSpec } from "vega-lite/build/src/spec";
 
 export const VegaLiteHighlightedChart = ({
   values,
@@ -18,6 +20,7 @@ export const VegaLiteHighlightedChart = ({
   }[];
   chartColor: string;
 }) => {
+  const selectedStreams = useStreamSelectionStore((state) => state.values);
   const dimensions: string[] = values.length
     ? Object.keys(values[0]).filter((e) => e !== "timestamp")
     : [];
@@ -173,6 +176,44 @@ export const VegaLiteHighlightedChart = ({
           },
         ],
       },
+
+      ...selectedStreams?.flatMap((value) => [
+        {
+          mark: "line",
+          encoding: {
+            y: { field: "value", type: "quantitative" },
+            color: {
+              field: "variable",
+              type: "nominal",
+              legend: null,
+              condition: {
+                test: `datum.variable === '${value}'`,
+                value: "black",
+              },
+            },
+            opacity: {
+              condition: {
+                test: `datum.variable === '${value}'`,
+                value: 1,
+              },
+              value: 0,
+            },
+          },
+        } as UnitSpec<"line">,
+        {
+          mark: { type: "text", align: "right", dy: -5 },
+          encoding: {
+            x: { field: "timestamp", type: "temporal", aggregate: "max" },
+            y: {
+              field: "value",
+              type: "quantitative",
+              aggregate: "max",
+            },
+            text: { value },
+          },
+          transform: [{ filter: `datum.variable === '${value}'` }],
+        } as UnitSpec<"text">,
+      ]),
     ],
   };
 

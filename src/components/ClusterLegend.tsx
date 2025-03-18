@@ -3,12 +3,7 @@ import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSetting
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { useState } from "react";
 import { clusterColors } from "./clusterColors";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
+import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
 
 export const ClusterLegend = () => {
   const clusterAssignment = useViewModelStore(
@@ -92,6 +87,8 @@ const HistoryBars = () => {
 };
 
 const LegendBar = ({ entries }: { entries: [string, number][] }) => {
+  const remove = useStreamSelectionStore((state) => state.remove);
+  const add = useStreamSelectionStore((state) => state.add);
   const clusterAssignmentOrientation = useStreamClustersSettingsStore(
     (store) => store.clusterAssignmentOrientation
   );
@@ -106,28 +103,24 @@ const LegendBar = ({ entries }: { entries: [string, number][] }) => {
       )}
     >
       {entries.map(([name, styleGroup], index) => (
-        <TooltipProvider key={`${name}-${index}`}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                className={cn(
-                  "flex-1",
-                  clusterAssignmentOrientation === "horizontal" ? "h-4" : "w-4",
-                  index > 0 && clusterAssignmentOrientation === "horizontal"
-                    ? "border-l-[0.5px]"
-                    : "",
-                  index > 0 && clusterAssignmentOrientation === "vertical"
-                    ? "border-t-[0.5px]"
-                    : ""
-                )}
-                style={{
-                  background: clusterColors[styleGroup % clusterColors.length],
-                }}
-              ></div>
-            </TooltipTrigger>
-            <TooltipContent>{name}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div
+          key={`${name}-${index}`}
+          onMouseEnter={() => add(name)}
+          onMouseLeave={() => remove(name)}
+          className={cn(
+            "flex-1",
+            clusterAssignmentOrientation === "horizontal" ? "h-4" : "w-4",
+            index > 0 && clusterAssignmentOrientation === "horizontal"
+              ? "border-l-[0.5px]"
+              : "",
+            index > 0 && clusterAssignmentOrientation === "vertical"
+              ? "border-t-[0.5px]"
+              : ""
+          )}
+          style={{
+            background: clusterColors[styleGroup % clusterColors.length],
+          }}
+        ></div>
       ))}
     </div>
   );

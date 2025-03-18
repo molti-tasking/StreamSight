@@ -77,7 +77,7 @@ export const StreamClustersBar = () => {
 
         {layoutMode === "treemap" && (
           <>
-            <Label>Treemap Significance Mode</Label>
+            <Label>Treemap Significance</Label>
             <Select
               value={treemapSignificanceMode}
               onValueChange={(value) =>
