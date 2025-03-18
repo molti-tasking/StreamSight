@@ -11,7 +11,7 @@ const chartModeSpecs: Record<
       color: {
         field: "variable",
         type: "nominal",
-        title: "Variables",
+        title: null,
       },
     },
   },
@@ -51,12 +51,10 @@ const chartModeSpecs: Record<
           x: {
             field: "timestamp",
             type: "temporal",
-            title: "Time",
           },
           y: {
             field: "q1_value",
             type: "quantitative",
-            title: "Value",
           },
           y2: {
             field: "q3_value",
@@ -73,7 +71,6 @@ const chartModeSpecs: Record<
           x: {
             field: "timestamp",
             type: "temporal",
-            title: "Time",
           },
           y: {
             field: "value",
@@ -82,6 +79,7 @@ const chartModeSpecs: Record<
           color: {
             field: "aggregation",
             type: "nominal",
+
             scale: {
               domain: ["mean_value", "max_value", "min_value"],
               range: ["steelblue", "steelblue", "steelblue"],
@@ -89,6 +87,7 @@ const chartModeSpecs: Record<
           },
           strokeDash: {
             field: "aggregation",
+            legend: null,
             type: "nominal",
             scale: {
               domain: ["max_value", "min_value"],
@@ -120,21 +119,38 @@ export const VegaLiteChart = ({
     height: "container",
     background: "transparent",
 
+    padding: 0,
+    // Try to ensure it resizes to fill container space without extra padding
+    autosize: {
+      type: "fit",
+      contains: "padding",
+    },
+
     data: { values },
     transform: [{ fold: dimensions, as: ["variable", "value"] }],
+
     mark: "line",
     encoding: {
       x: {
         field: "timestamp",
         type: !!saveScreenSpace ? "ordinal" : "temporal",
-        axis: !!saveScreenSpace ? { labelExpr: "" } : undefined,
-        title: "Time",
+        axis: !!saveScreenSpace ? { labelExpr: "" } : {},
+        title: null,
       },
       y: {
         field: "value",
         type: "quantitative",
-        title: "Value",
         scale: { domain: yDomain },
+        title: null,
+        axis: {
+          labelPadding: -20,
+          labelOpacity: 0.5,
+          ticks: false,
+          domain: false,
+        },
+      },
+      color: {
+        legend: null,
       },
     },
   };
@@ -146,11 +162,17 @@ export const VegaLiteChart = ({
   );
 
   return (
-    <VegaLite
-      spec={spec}
-      actions={false}
-      style={{ cursor: "pointer" }}
-      className={cn("flex-1", className, "rounded-sm overflow-hidden min-h-40")}
-    />
+    <div className={cn("flex-1", "rounded-sm overflow-hidden min-h-20 h-full")}>
+      <VegaLite
+        spec={spec}
+        actions={false}
+        style={{ cursor: "pointer" }}
+        className={cn(
+          className,
+          "w-full h-full flex flex-1",
+          "rounded-sm overflow-hidden min-h-20 h-full"
+        )}
+      />
+    </div>
   );
 };

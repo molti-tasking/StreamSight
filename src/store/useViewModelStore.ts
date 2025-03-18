@@ -9,6 +9,7 @@ import { useRawDataStore } from "./useRawDataStore";
 import { useStreamClustersSettingsStore } from "./useStreamClustersSettingsStore";
 import { highlighter } from "@/app/actions/highlighting";
 import { aggregator } from "@/app/actions/clustering";
+import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
 
 interface DataStore {
   aggregated: Record<string, number>[][];
@@ -42,17 +43,28 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     console.time("ViewModel basic data process duration " + String(timerName));
     const dimensions = useRawDataStore.getState().dimensions;
     const values = useRawDataStore.getState().values;
-    const { updateSettings, ...streamClusterSettings } =
+    const { chartMode, clusterAssignmentHistoryDepth } =
       useStreamClustersSettingsStore.getState();
-    console.log(
-      "Stream Cluster Settings: ",
-      streamClusterSettings,
-      updateSettings
-    );
-    const { updateSettings: update, ...dataProcessingSettings } =
-      useClusterProcessingSettingsStore.getState();
-    console.log("Data Processing Settings: ", dataProcessingSettings);
-    console.log("Settings: ", update);
+
+    const {
+      eps,
+      ignoreBoringDataMode,
+      dataTicks,
+      timeScale,
+      meanRange,
+      tickRange,
+      saveScreenSpace,
+    } = useClusterProcessingSettingsStore.getState();
+    const dataProcessingSettings: DataProcessingSettings = {
+      eps,
+      ignoreBoringDataMode,
+      dataTicks,
+      timeScale,
+      meanRange,
+      tickRange,
+      saveScreenSpace,
+    };
+
     const aggregated = await aggregator(
       values,
       dimensions,
@@ -79,14 +91,11 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       opacity: number;
       lastDimension: number | undefined;
     }[][] = [];
-    if (streamClusterSettings.chartMode === "highlighted") {
+    if (chartMode === "highlighted") {
       highlightInfo = await highlighter(
         aggregated.aggregated,
         clusterAssignment,
-        updatedClusterAssignmentHistory.slice(
-          0,
-          streamClusterSettings.clusterAssignmentHistoryDepth
-        )
+        updatedClusterAssignmentHistory.slice(0, clusterAssignmentHistoryDepth)
       );
     }
 
@@ -105,16 +114,25 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     );
     const dimensions = useRawDataStore.getState().dimensions;
     const values = useRawDataStore.getState().values;
-    const { updateSettings, ...streamClusterSettings } =
-      useStreamClustersSettingsStore.getState();
-    console.log(
-      "Stream cluster settings: ",
-      streamClusterSettings,
-      updateSettings
-    );
-    const { updateSettings: update, ...dataProcessingSettings } =
-      useClusterProcessingSettingsStore.getState();
-    console.log("Data processing settings: ", update);
+
+    const {
+      eps,
+      ignoreBoringDataMode,
+      dataTicks,
+      timeScale,
+      meanRange,
+      tickRange,
+      saveScreenSpace,
+    } = useClusterProcessingSettingsStore.getState();
+    const dataProcessingSettings: DataProcessingSettings = {
+      eps,
+      ignoreBoringDataMode,
+      dataTicks,
+      timeScale,
+      meanRange,
+      tickRange,
+      saveScreenSpace,
+    };
 
     const { clustersInTime } = await clusteringOverTime(
       values,

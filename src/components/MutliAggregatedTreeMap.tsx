@@ -1,18 +1,16 @@
-import { VegaLiteHighlightedChart } from "@/components/charts/VegaLiteHighlightedChart";
 import { clusterColors } from "@/components/clusterColors";
-import { TreeMap } from "@/components/TreeMap";
 import { useContainerDimensions } from "@/components/useContainerDimensions";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useRawDataStore } from "@/store/useRawDataStore";
-import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { useEffect, useRef } from "react";
+import { Treemap } from "./Treemap";
+import { Chart } from "./Chart";
 
-export default function MutliAggregatedTreeMap() {
-  const mode = useStreamClustersSettingsStore((state) => state.chartMode);
+export function MutliAggregatedTreemap() {
   const aggregated = useViewModelStore((data) => data.aggregated);
   const highlightInfo = useViewModelStore((state) => state.highlightInfo);
-  const yDomain = useViewModelStore((state) => state.yDomain);
+  console.log("highlightInfo", highlightInfo);
 
   const ref = useRef<HTMLDivElement>(null);
   const { height, width } = useContainerDimensions(ref);
@@ -30,7 +28,7 @@ export default function MutliAggregatedTreeMap() {
   console.log("Render aggregated treemap");
   return (
     <div ref={ref} className="flex-1 min-h-20">
-      <TreeMap
+      <Treemap
         key={aggregated.length}
         width={width}
         height={height}
@@ -54,14 +52,11 @@ export default function MutliAggregatedTreeMap() {
               const relativeWidth = currentWidth / totalMaxWidth;
               const keptValueCount = Math.ceil(clusters.length * relativeWidth);
               const values = clusters.slice(-keptValueCount);
-
               return (
-                <VegaLiteHighlightedChart
+                <Chart
                   values={values}
                   key={index}
                   className={"w-full h-full overflow-hidden"}
-                  yDomain={yDomain}
-                  mode={mode}
                   highlightInfo={highlightInfo?.[index]}
                   chartColor={clusterColors[index % clusterColors.length]}
                 />

@@ -15,15 +15,10 @@ export const FormSubmitButton = ({
   loadingText?: string;
   singleSubmit?: boolean;
 } & ButtonProps) => {
-  const {
-    isSubmitting,
+  const { isSubmitting, isValid, submitCount, isSubmitSuccessful } =
+    useFormState();
 
-    isValid,
-    submitCount,
-    isSubmitSuccessful,
-  } = useFormState();
-
-  const classes = cn("w-full md:w-[unset]", className);
+  const classes = cn("w-full md:w-[unset] cursor-pointer", className);
 
   if (singleSubmit && isSubmitSuccessful) {
     return (

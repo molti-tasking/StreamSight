@@ -6,7 +6,7 @@ type ClusterComponentType = (props: {
   currentWidth: number;
 }) => React.ReactNode;
 
-interface TreeMapProps {
+interface TreemapProps {
   height?: number;
   width?: number;
 
@@ -20,11 +20,11 @@ interface TreeMapProps {
   }[];
 }
 
-export const TreeMap = ({
+export const Treemap = ({
   height = 400,
   width = 600,
   ...props
-}: TreeMapProps) => {
+}: TreemapProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [maxWidth, setMaxWidth] = useState<number>(0);
   const [nodes, setNodes] = useState<

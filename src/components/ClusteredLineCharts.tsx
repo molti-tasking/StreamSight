@@ -5,9 +5,8 @@ import { useViewModelStore } from "@/store/useViewModelStore";
 import { AlertCircleIcon } from "lucide-react";
 import { memo } from "react";
 import { PlotlyChart } from "./charts/PlotlyChart";
-import { VegaLiteChart } from "./charts/VegaLiteChart";
-import { VegaLiteHighlightedChart } from "./charts/VegaLiteHighlightedChart";
 import { clusterColors } from "./clusterColors";
+import { Chart } from "./Chart";
 
 export const ClusteredLineChartList = () => {
   return (
@@ -51,6 +50,7 @@ const Charts = memo(() => {
   const saveScreenSpace = useClusterProcessingSettingsStore(
     (state) => "saveScreenSpace" in state && state.saveScreenSpace
   );
+
   if (mode === "plotly") {
     // From plotly docs: https://plotly.com/python/webgl-vs-svg/
 
@@ -98,35 +98,17 @@ const Charts = memo(() => {
         ))}
       </>
     );
-  } else if (mode === "highlighted") {
-    return (
-      <>
-        {aggregated.map((val, index) => (
-          <VegaLiteHighlightedChart
-            values={val}
-            key={index}
-            className={""}
-            yDomain={yDomain}
-            mode={mode}
-            saveScreenSpace={saveScreenSpace}
-            highlightInfo={highlightInfo?.[index]}
-            chartColor={clusterColors[index % clusterColors.length]}
-          />
-        ))}
-      </>
-    );
   }
 
   return (
     <>
       {aggregated.map((val, index) => (
-        <VegaLiteChart
+        <Chart
           values={val}
+          className=""
           key={index}
-          className={clusterColors[index % clusterColors.length]}
-          yDomain={yDomain}
-          mode={mode}
-          saveScreenSpace={saveScreenSpace}
+          chartColor={clusterColors[index % clusterColors.length]}
+          highlightInfo={highlightInfo?.[index]}
         />
       ))}
     </>
