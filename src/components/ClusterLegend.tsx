@@ -14,19 +14,30 @@ export const ClusterLegend = () => {
   const clusterAssignment = useViewModelStore(
     (state) => state.clusterAssignment
   );
+  const clusterAssignmentOrientation = useStreamClustersSettingsStore(
+    (store) => store.clusterAssignmentOrientation
+  );
 
   const [showHistory, setShowHistory] = useState<boolean>(false);
 
   return (
     <div
-      className="flex flex-col w-full gap-1 cursor-pointer"
+      className={cn(
+        "flex gap-1 cursor-pointer",
+        clusterAssignmentOrientation === "horizontal"
+          ? "flex-row w-full"
+          : "flex-col h-full"
+      )}
       onClick={() => setShowHistory((currValue) => !currValue)}
     >
       {showHistory ? (
         <HistoryBars />
       ) : (
         <div
-          className="w-full rounded-sm overflow-hidden opacity-70"
+          className={cn(
+            "rounded-sm overflow-hidden opacity-70",
+            clusterAssignmentOrientation === "horizontal" ? "w-full" : "h-full"
+          )}
           key={"single-legend-bar"}
         >
           <LegendBar entries={clusterAssignment} />
@@ -43,9 +54,19 @@ const HistoryBars = () => {
   const clusterAssignmentHistory = useViewModelStore(
     (state) => state.clusterAssignmentHistory
   ).slice(0, clusterAssignmentHistoryDepth);
+  const clusterAssignmentOrientation = useStreamClustersSettingsStore(
+    (store) => store.clusterAssignmentOrientation
+  );
 
   return (
-    <div className="flex flex-col-reverse w-full rounded-sm overflow-hidden">
+    <div
+      className={cn(
+        "flex rounded-sm overflow-hidden",
+        clusterAssignmentOrientation === "horizontal"
+          ? "flex-col-reverse w-full"
+          : "flex-row-reverse h-full"
+      )}
+    >
       {clusterAssignmentHistory.map(({ timestamp, entries }, index) => {
         const opacity = (
           (clusterAssignmentHistory.length - index) /
@@ -56,7 +77,11 @@ const HistoryBars = () => {
           <div
             key={`${timestamp}-${index}`}
             style={{ opacity }}
-            className={cn("w-full")}
+            className={cn(
+              clusterAssignmentOrientation === "horizontal"
+                ? "w-full"
+                : "h-full"
+            )}
           >
             <LegendBar entries={entries} />
           </div>
@@ -67,16 +92,33 @@ const HistoryBars = () => {
 };
 
 const LegendBar = ({ entries }: { entries: [string, number][] }) => {
+  const clusterAssignmentOrientation = useStreamClustersSettingsStore(
+    (store) => store.clusterAssignmentOrientation
+  );
+
   return (
-    <div className="flex flex-row shrink items-center  overflow-hidden">
+    <div
+      className={cn(
+        "flex shrink items-center overflow-hidden",
+        clusterAssignmentOrientation === "horizontal"
+          ? "flex-row"
+          : "flex-col h-full"
+      )}
+    >
       {entries.map(([name, styleGroup], index) => (
         <TooltipProvider key={`${name}-${index}`}>
           <Tooltip>
             <TooltipTrigger asChild>
               <div
                 className={cn(
-                  "flex-1 h-4",
-                  index > 0 ? "border-l-[0.5px]" : ""
+                  "flex-1",
+                  clusterAssignmentOrientation === "horizontal" ? "h-4" : "w-4",
+                  index > 0 && clusterAssignmentOrientation === "horizontal"
+                    ? "border-l-[0.5px]"
+                    : "",
+                  index > 0 && clusterAssignmentOrientation === "vertical"
+                    ? "border-t-[0.5px]"
+                    : ""
                 )}
                 style={{
                   background: clusterColors[styleGroup % clusterColors.length],

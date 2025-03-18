@@ -10,6 +10,7 @@ import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingS
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import MutliAggregatedTreeMap from "@/components/MutliAggregatedTreeMap";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
@@ -20,6 +21,12 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 export default function StreamClustersPage() {
   const aggregated = useViewModelStore((store) => store.aggregated);
+  const showClusterAssignments = useStreamClustersSettingsStore(
+    (store) => store.showClusterAssignments
+  );
+  const clusterAssignmentOrientation = useStreamClustersSettingsStore(
+    (store) => store.clusterAssignmentOrientation
+  );
   return (
     <>
       <div className="flex flex-row justify-between border-b overflow-x-scroll">
@@ -44,8 +51,16 @@ export default function StreamClustersPage() {
         </div>
         <StreamClustersBar />
       </div>
-      <div className="w-screen flex flex-1" style={{ overflow: "overlay" }}>
-        <div className="w-screen p-2 flex flex-col flex-wrap gap-2 h-full">
+      <div className={"w-screen flex-1"} style={{ overflow: "overlay" }}>
+        <div
+          className={cn(
+            "w-screen p-2 flex gap-2 h-full",
+            showClusterAssignments &&
+              clusterAssignmentOrientation === "horizontal"
+              ? "flex-col flex-wrap"
+              : "flex-row"
+          )}
+        >
           <ErrorBoundary fallbackRender={ResetErrorBoundary}>
             <StreamClusters />
           </ErrorBoundary>
