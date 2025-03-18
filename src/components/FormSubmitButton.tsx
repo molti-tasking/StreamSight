@@ -17,22 +17,14 @@ export const FormSubmitButton = ({
 } & ButtonProps) => {
   const {
     isSubmitting,
-    isDirty,
+
     isValid,
     submitCount,
     isSubmitSuccessful,
-    errors,
   } = useFormState();
 
   const classes = cn("w-full md:w-[unset]", className);
-  console.log({
-    isSubmitting,
-    isDirty,
-    isValid,
-    submitCount,
-    isSubmitSuccessful,
-    errors,
-  });
+
   if (singleSubmit && isSubmitSuccessful) {
     return (
       <Button type="submit" disabled className={classes} {...props}>
@@ -45,7 +37,7 @@ export const FormSubmitButton = ({
     <Button
       type="submit"
       className={classes}
-      disabled={!isDirty || (!isValid && submitCount > 0) || isSubmitting}
+      disabled={(!isValid && submitCount > 0) || isSubmitting}
       {...props}
     >
       {!!isSubmitting ? (

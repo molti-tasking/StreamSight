@@ -36,6 +36,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const initialSimulationData = {
+  rows: 20,
+  columns: 80,
+  streamingInterval: 3000,
+};
+
 export const DataSetForm = () => {
   const router = useRouter();
   const dimensions = useRawDataStore((state) => state.dimensions);
@@ -47,11 +53,15 @@ export const DataSetForm = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      peakSimulation: {
-        rows: values.length,
-        columns: dimensions.length + 1,
-        streamingInterval: streamingInterval ?? 0,
-      },
+      dataSet: "peak-simulation",
+      peakSimulation:
+        values.length && dimensions.length
+          ? {
+              rows: values.length,
+              columns: dimensions.length + 1,
+              streamingInterval: streamingInterval ?? 0,
+            }
+          : initialSimulationData,
     },
   });
 
