@@ -10,7 +10,6 @@ import { Chart } from "./Chart";
 export function MutliAggregatedTreemap() {
   const aggregated = useViewModelStore((data) => data.aggregated);
   const highlightInfo = useViewModelStore((state) => state.highlightInfo);
-  console.log("highlightInfo", highlightInfo);
 
   const ref = useRef<HTMLDivElement>(null);
   const { height, width } = useContainerDimensions(ref);
