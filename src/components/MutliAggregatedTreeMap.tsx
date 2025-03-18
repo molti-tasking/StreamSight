@@ -16,7 +16,6 @@ export function MutliAggregatedTreemap() {
 
   const processData = useViewModelStore((state) => state.processData);
   const values = useRawDataStore((state) => state.values);
-  // const dimensions = useRawDataStore((state) => state.dimensions);
 
   const presentationSettings = useClusterProcessingSettingsStore();
 
