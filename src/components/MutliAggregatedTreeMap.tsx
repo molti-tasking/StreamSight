@@ -4,8 +4,8 @@ import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSett
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { useEffect, useRef } from "react";
-import { Treemap } from "./Treemap";
 import { Chart } from "./Chart";
+import { Treemap } from "./Treemap";
 
 export function MutliAggregatedTreemap() {
   const aggregated = useViewModelStore((data) => data.aggregated);
