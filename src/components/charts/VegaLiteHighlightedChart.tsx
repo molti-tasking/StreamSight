@@ -4,6 +4,7 @@ import { clusterColors } from "../clusterColors";
 import { ChartProps } from "./ChartProps";
 import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
 import { UnitSpec } from "vega-lite/build/src/spec";
+import { LegendButton } from "./LegendButton";
 
 export const VegaLiteHighlightedChart = ({
   values,
@@ -218,7 +219,12 @@ export const VegaLiteHighlightedChart = ({
   };
 
   return (
-    <div className={cn("flex-1", "rounded-sm overflow-hidden min-h-20 h-full")}>
+    <div
+      className={"flex-1 rounded-sm overflow-hidden min-h-20 h-full relative"}
+    >
+      <div className="absolute top-2 right-2 z-40">
+        <LegendButton dimensions={dimensions} />
+      </div>
       <VegaLite
         spec={spec}
         actions={false}

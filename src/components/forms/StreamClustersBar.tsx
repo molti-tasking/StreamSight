@@ -42,6 +42,7 @@ export const StreamClustersBar = () => {
     showClusterAssignments,
     chartMode,
     showStreamLabel,
+    showClusterLegend,
   } = useStreamClustersSettingsStore();
 
   return (
@@ -238,6 +239,21 @@ export const StreamClustersBar = () => {
           />
 
           <Label htmlFor="showStreamLabel-switch">Stream Label</Label>
+        </div>
+
+        <div className="flex flex-row items-center gap-2 space-y-0">
+          <Switch
+            id="showClusterLegend-switch"
+            checked={showClusterLegend}
+            onCheckedChange={(value) =>
+              updateSettings((settings) => ({
+                ...settings,
+                showClusterLegend: value,
+              }))
+            }
+          />
+
+          <Label htmlFor="showClusterLegend-switch">Cluster Legend</Label>
         </div>
       </SettingSection>
 

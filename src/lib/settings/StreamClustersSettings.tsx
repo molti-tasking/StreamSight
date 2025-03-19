@@ -9,6 +9,7 @@ export const streamClustersSettingsSchema = z.object({
   treemapSignificanceMode: z.enum(["clusterSize", "clusterVariance"]),
   chartMode: z.enum(["highlighted", "multiline", "envelope", "plotly"]),
   showStreamLabel: z.coerce.boolean(),
+  showClusterLegend: z.coerce.boolean(),
 });
 
 export type StreamClustersSettings = z.infer<
