@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useStreamClustersSettingsStore } from "./useStreamClustersSettingsStore";
 
 type StoreValues = {
   values: string[];
@@ -25,7 +26,10 @@ export const useStreamSelectionStore = create<StreamSelectionStore>(
       },
 
       add(value) {
-        set(({ values }) => ({ values: [...values, value] }));
+        const { showStreamLabel } = useStreamClustersSettingsStore.getState();
+        if (showStreamLabel) {
+          set(({ values }) => ({ values: [...values, value] }));
+        }
       },
       removeAtIndex(index) {
         set(({ values }) => ({

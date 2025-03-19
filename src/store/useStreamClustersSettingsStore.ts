@@ -16,6 +16,7 @@ export const useStreamClustersSettingsStore =
       showClusterAssignments: true,
       clusterAssignmentHistoryDepth: 5,
       clusterAssignmentOrientation: "horizontal",
+      showStreamLabel: true,
 
       updateSettings: (newSettings) => {
         const newValues = newSettings(get());

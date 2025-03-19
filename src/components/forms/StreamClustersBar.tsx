@@ -41,6 +41,7 @@ export const StreamClustersBar = () => {
     clusterAssignmentOrientation,
     showClusterAssignments,
     chartMode,
+    showStreamLabel,
   } = useStreamClustersSettingsStore();
 
   return (
@@ -224,7 +225,20 @@ export const StreamClustersBar = () => {
       <Separator orientation="vertical" className="mx-4" />
 
       <SettingSection title="Label / Annotation">
-        <p>TBD</p>
+        <div className="flex flex-row items-center gap-2 space-y-0">
+          <Switch
+            id="showStreamLabel-switch"
+            checked={showStreamLabel}
+            onCheckedChange={(value) =>
+              updateSettings((settings) => ({
+                ...settings,
+                showStreamLabel: value,
+              }))
+            }
+          />
+
+          <Label htmlFor="showStreamLabel-switch">Stream Label</Label>
+        </div>
       </SettingSection>
 
       <Separator orientation="vertical" className="mx-4" />
