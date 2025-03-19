@@ -8,6 +8,7 @@ import {
 import { ClusterLegend } from "@/components/ClusterLegend";
 import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
+import { TreemapLayout } from "@/components/TreemapLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
@@ -96,7 +97,7 @@ const ChartViewDisplay = () => {
   } else if (layoutMode === "list") {
     return <ClusteredLineChartList />;
   } else if (layoutMode === "treemap") {
-    return <p>TREEMAP</p>;
+    return <TreemapLayout />;
   }
   return (
     <div>
