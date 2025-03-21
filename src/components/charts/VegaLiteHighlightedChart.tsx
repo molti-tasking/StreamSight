@@ -75,9 +75,6 @@ export const VegaLiteHighlightedChart = ({
             domain: false,
           },
         },
-        color: {
-          legend: null,
-        },
       },
     };
   } else {
@@ -274,17 +271,15 @@ export const VegaLiteHighlightedChart = ({
     };
   }
   return (
-    <div className={"flex-1 rounded-sm  min-h-20 h-full relative"}>
-      <div className="absolute top-2 right-2 z-40">
-        <LegendButton dimensions={dimensions} />
-      </div>
+    <div className={"flex-1 rounded-sm min-h-20 h-full relative"}>
+      <LegendButton dimensions={dimensions} />
       <VegaLite
         spec={spec}
         actions={false}
         className={cn(
           className,
           "w-full h-full flex flex-1",
-          "rounded-sm   min-h-20 h-full"
+          "rounded-sm min-h-20 h-full"
         )}
       />
     </div>

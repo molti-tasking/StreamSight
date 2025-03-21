@@ -150,9 +150,7 @@ export const VegaLiteChart = ({
           domain: false,
         },
       },
-      color: {
-        legend: null,
-      },
+      color: { legend: null },
     },
   };
 
@@ -166,9 +164,7 @@ export const VegaLiteChart = ({
     <div
       className={"flex-1 rounded-sm overflow-hidden min-h-20 h-full relative"}
     >
-      <div className="absolute top-2 right-2 z-40">
-        <LegendButton dimensions={dimensions} />
-      </div>
+      <LegendButton dimensions={dimensions} />
       <VegaLite
         spec={spec}
         actions={false}

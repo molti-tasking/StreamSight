@@ -57,7 +57,7 @@ export const DataSetForm = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      dataSet: "peak-simulation",
+      dataSet: "GDP",
       peakSimulation:
         values.length && dimensions.length
           ? {
