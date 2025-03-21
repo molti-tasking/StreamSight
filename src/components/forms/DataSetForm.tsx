@@ -24,6 +24,7 @@ import { FormSubmitButton } from "../FormSubmitButton";
 import { Input } from "../ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 
 const formSchema = z.object({
   dataSet: z.enum(["S&P500", "GDP", "peak-simulation"]),
@@ -49,6 +50,9 @@ export const DataSetForm = () => {
   const streamingInterval = useRawDataStore((state) => state.streamingInterval);
   const updateData = useRawDataStore((state) => state.updateData);
   const loadDataset = useRawDataStore((state) => state.loadDataset);
+  const updateClustering = useClusterProcessingSettingsStore(
+    (state) => state.updateSettings
+  );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -96,6 +100,10 @@ export const DataSetForm = () => {
         data.peakSimulation.streamingInterval
       );
     } else {
+      if (data.dataSet === "GDP") {
+        updateClustering((state) => ({ ...state, eps: 100000 }));
+      }
+
       loadDataset(data.dataSet);
     }
     toast("🎉 Great Choice", {
