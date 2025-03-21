@@ -38,7 +38,7 @@ export async function* streamDataSet(
   }
 }
 
-function safeRequestIdleCallback(callback: () => void, minTimeout = 1000) {
+function safeRequestIdleCallback(callback: () => void, minTimeout = 3000) {
   if ("requestIdleCallback" in window) {
     return setTimeout(() => requestIdleCallback(callback), minTimeout);
   } else {

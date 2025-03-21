@@ -226,7 +226,7 @@ export const StreamClustersBar = () => {
       <Separator orientation="vertical" className="mx-4" />
 
       <SettingSection title="Label / Annotation">
-        <div className="flex flex-row items-center gap-2 space-y-0">
+        <div className="flex flex-row items-center gap-2 mb-2">
           <Switch
             id="showStreamLabel-switch"
             checked={showStreamLabel}
@@ -241,7 +241,7 @@ export const StreamClustersBar = () => {
           <Label htmlFor="showStreamLabel-switch">Stream Label</Label>
         </div>
 
-        <div className="flex flex-row items-center gap-2 space-y-0">
+        <div className="flex flex-row items-center gap-2">
           <Switch
             id="showClusterLegend-switch"
             checked={showClusterLegend}

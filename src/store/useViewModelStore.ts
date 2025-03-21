@@ -37,115 +37,131 @@ interface DataStore {
 export const useViewModelStore = create<DataStore>((set, get) => {
   console.log("init view model store");
 
-  const throttledDataProcess = _.throttle(async () => {
-    const timerName = Date.now();
+  const throttledDataProcess = _.throttle(
+    async function () {
+      console.log("------------");
+      console.log("Cluster START");
+      const timerName = Date.now();
 
-    console.time("ViewModel basic data process duration " + String(timerName));
-    const dimensions = useRawDataStore.getState().dimensions;
-    const values = useRawDataStore.getState().values;
-    const { chartMode, clusterAssignmentHistoryDepth } =
-      useStreamClustersSettingsStore.getState();
-
-    const {
-      eps,
-      ignoreBoringDataMode,
-      dataTicks,
-      timeScale,
-      meanRange,
-      tickRange,
-      saveScreenSpace,
-    } = useClusterProcessingSettingsStore.getState();
-    const dataProcessingSettings: DataProcessingSettings = {
-      eps,
-      ignoreBoringDataMode,
-      dataTicks,
-      timeScale,
-      meanRange,
-      tickRange,
-      saveScreenSpace,
-    };
-
-    const aggregated = await aggregator(
-      values,
-      dimensions,
-      dataProcessingSettings
-    );
-    console.timeEnd(
-      "ViewModel basic data process duration " + String(timerName)
-    );
-    console.log("Found amount of clusters: ", aggregated.aggregated.length);
-    const lastTimestamp =
-      values?.[values.length - 1]?.["timestamp"] ?? Date.now();
-    const clusterAssignment: [string, number][] = aggregated.clusterAssignment;
-
-    const clusterAssignmentHistory = get().clusterAssignmentHistory;
-    const updatedClusterAssignmentHistory = clusterAssignmentHistory
-      .toSpliced(0, 0, {
-        timestamp: lastTimestamp,
-        entries: clusterAssignment,
-      })
-      .slice(0, 20);
-
-    let highlightInfo: {
-      dimension: string;
-      opacity: number;
-      lastDimension: number | undefined;
-    }[][] = [];
-    if (chartMode === "highlighted") {
-      highlightInfo = await highlighter(
-        aggregated.aggregated,
-        clusterAssignment,
-        updatedClusterAssignmentHistory.slice(0, clusterAssignmentHistoryDepth)
+      console.time(
+        "ViewModel basic data process duration " + String(timerName)
       );
-    }
+      const dimensions = useRawDataStore.getState().dimensions;
+      const values = useRawDataStore.getState().values;
+      const { chartMode, clusterAssignmentHistoryDepth } =
+        useStreamClustersSettingsStore.getState();
 
-    set({
-      ...aggregated,
-      clusterAssignmentHistory: updatedClusterAssignmentHistory,
-      highlightInfo,
-    });
-  }, 2000);
+      const {
+        eps,
+        ignoreBoringDataMode,
+        dataTicks,
+        timeScale,
+        meanRange,
+        tickRange,
+        saveScreenSpace,
+      } = useClusterProcessingSettingsStore.getState();
+      const dataProcessingSettings: DataProcessingSettings = {
+        eps,
+        ignoreBoringDataMode,
+        dataTicks,
+        timeScale,
+        meanRange,
+        tickRange,
+        saveScreenSpace,
+      };
+      console.log("Clustering with: ", dataProcessingSettings.eps);
+      const aggregated = await aggregator(
+        values,
+        dimensions,
+        dataProcessingSettings
+      );
+      console.timeEnd(
+        "ViewModel basic data process duration " + String(timerName)
+      );
+      console.log("Found amount of clusters: ", aggregated.aggregated.length);
+      const lastTimestamp =
+        values?.[values.length - 1]?.["timestamp"] ?? Date.now();
+      const clusterAssignment: [string, number][] =
+        aggregated.clusterAssignment;
 
-  const throttledClustersInTimeProcess = _.throttle(async () => {
-    const timerName = Date.now();
+      const clusterAssignmentHistory = get().clusterAssignmentHistory;
+      const updatedClusterAssignmentHistory = clusterAssignmentHistory
+        .toSpliced(0, 0, {
+          timestamp: lastTimestamp,
+          entries: clusterAssignment,
+        })
+        .slice(0, 20);
 
-    console.time(
-      "ViewModel cluster in time process duration " + String(timerName)
-    );
-    const dimensions = useRawDataStore.getState().dimensions;
-    const values = useRawDataStore.getState().values;
+      let highlightInfo: {
+        dimension: string;
+        opacity: number;
+        lastDimension: number | undefined;
+      }[][] = [];
+      if (chartMode === "highlighted") {
+        highlightInfo = await highlighter(
+          aggregated.aggregated,
+          clusterAssignment,
+          updatedClusterAssignmentHistory.slice(
+            0,
+            clusterAssignmentHistoryDepth
+          )
+        );
+      }
 
-    const {
-      eps,
-      ignoreBoringDataMode,
-      dataTicks,
-      timeScale,
-      meanRange,
-      tickRange,
-      saveScreenSpace,
-    } = useClusterProcessingSettingsStore.getState();
-    const dataProcessingSettings: DataProcessingSettings = {
-      eps,
-      ignoreBoringDataMode,
-      dataTicks,
-      timeScale,
-      meanRange,
-      tickRange,
-      saveScreenSpace,
-    };
+      set({
+        ...aggregated,
+        clusterAssignmentHistory: updatedClusterAssignmentHistory,
+        highlightInfo,
+      });
+    },
+    2000,
+    { trailing: true }
+  );
 
-    const { clustersInTime } = await clusteringOverTime(
-      values,
-      dimensions,
-      dataProcessingSettings
-    );
+  const throttledClustersInTimeProcess = _.throttle(
+    async () => {
+      const timerName = Date.now();
 
-    console.timeEnd(
-      "ViewModel cluster in time process duration " + String(timerName)
-    );
+      console.time(
+        "ViewModel cluster in time process duration " + String(timerName)
+      );
+      const dimensions = useRawDataStore.getState().dimensions;
+      const values = useRawDataStore.getState().values;
 
-    set({ clustersInTime });
-  }, 10000);
+      const {
+        eps,
+        ignoreBoringDataMode,
+        dataTicks,
+        timeScale,
+        meanRange,
+        tickRange,
+        saveScreenSpace,
+      } = useClusterProcessingSettingsStore.getState();
+      const dataProcessingSettings: DataProcessingSettings = {
+        eps,
+        ignoreBoringDataMode,
+        dataTicks,
+        timeScale,
+        meanRange,
+        tickRange,
+        saveScreenSpace,
+      };
+
+      const { clustersInTime } = await clusteringOverTime(
+        values,
+        dimensions,
+        dataProcessingSettings
+      );
+
+      console.timeEnd(
+        "ViewModel cluster in time process duration " + String(timerName)
+      );
+
+      set({ clustersInTime });
+    },
+    10000,
+    { trailing: true }
+  );
 
   return {
     aggregated: [],

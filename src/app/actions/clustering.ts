@@ -22,6 +22,7 @@ export const aggregator = async (
   dimensions: string[],
   dataProcessingSettings: DataProcessingSettings
 ): Promise<AggregatedProps> => {
+  console.log("Cluster with eps: ", dataProcessingSettings.eps);
   // ----------------
   // Filtering data to time
   // ----------------
