@@ -101,7 +101,7 @@ export const DataSetForm = () => {
       );
     } else {
       if (data.dataSet === "GDP") {
-        updateClustering((state) => ({ ...state, eps: 10000 }));
+        updateClustering((state) => ({ ...state, eps: 100000 }));
       }
 
       loadDataset(data.dataSet);

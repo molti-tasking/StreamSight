@@ -18,7 +18,7 @@ export const LegendButton = ({
   );
 
   if (!showClusterLegend) {
-    return <></>;
+    return children;
   }
 
   return (
@@ -28,7 +28,7 @@ export const LegendButton = ({
           {children}
         </div>
       </HoverCardTrigger>
-      <HoverCardContent className="max-w-80 lg:max-w-2xl xl:max-w-4xl">
+      <HoverCardContent className="w-80 lg:w-2xl xl:w-4xl">
         <h4 className="font-medium mb-2">Streams</h4>
         <p className="flex flex-row gap-1 flex-wrap">
           {dimensions.map((dim) => (
