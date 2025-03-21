@@ -38,14 +38,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
   console.log("init view model store");
 
   const throttledDataProcess = _.throttle(
-    async function () {
-      console.log("------------");
-      console.log("Cluster START");
-      const timerName = Date.now();
-
-      console.time(
-        "ViewModel basic data process duration " + String(timerName)
-      );
+    async () => {
       const dimensions = useRawDataStore.getState().dimensions;
       const values = useRawDataStore.getState().values;
       const { chartMode, clusterAssignmentHistoryDepth } =
@@ -75,9 +68,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         dimensions,
         dataProcessingSettings
       );
-      console.timeEnd(
-        "ViewModel basic data process duration " + String(timerName)
-      );
+
       console.log("Found amount of clusters: ", aggregated.aggregated.length);
       const lastTimestamp =
         values?.[values.length - 1]?.["timestamp"] ?? Date.now();
@@ -115,7 +106,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       });
     },
     2000,
-    { trailing: true }
+    { trailing: true, leading: false }
   );
 
   const throttledClustersInTimeProcess = _.throttle(
@@ -160,7 +151,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       set({ clustersInTime });
     },
     10000,
-    { trailing: true }
+    { trailing: true, leading: false }
   );
 
   return {

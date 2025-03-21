@@ -272,16 +272,17 @@ export const VegaLiteHighlightedChart = ({
   }
   return (
     <div className={"flex-1 rounded-sm min-h-20 h-full relative"}>
-      <LegendButton dimensions={dimensions} />
-      <VegaLite
-        spec={spec}
-        actions={false}
-        className={cn(
-          className,
-          "w-full h-full flex flex-1",
-          "rounded-sm min-h-20 h-full"
-        )}
-      />
+      <LegendButton dimensions={dimensions}>
+        <VegaLite
+          spec={spec}
+          actions={false}
+          className={cn(
+            className,
+            "w-full h-full flex flex-1",
+            "rounded-sm min-h-20 h-full"
+          )}
+        />
+      </LegendButton>
     </div>
   );
 };

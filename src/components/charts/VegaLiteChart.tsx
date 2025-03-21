@@ -164,17 +164,18 @@ export const VegaLiteChart = ({
     <div
       className={"flex-1 rounded-sm overflow-hidden min-h-20 h-full relative"}
     >
-      <LegendButton dimensions={dimensions} />
-      <VegaLite
-        spec={spec}
-        actions={false}
-        style={{ cursor: "pointer" }}
-        className={cn(
-          className,
-          "w-full h-full flex flex-1",
-          "rounded-sm overflow-hidden min-h-20 h-full"
-        )}
-      />
+      <LegendButton dimensions={dimensions}>
+        <VegaLite
+          spec={spec}
+          actions={false}
+          style={{ cursor: "pointer" }}
+          className={cn(
+            className,
+            "w-full h-full flex flex-1",
+            "rounded-sm overflow-hidden min-h-20 h-full"
+          )}
+        />
+      </LegendButton>
     </div>
   );
 };
