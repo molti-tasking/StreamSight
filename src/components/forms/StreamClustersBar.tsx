@@ -12,7 +12,6 @@ import {
   clusterAssignmentOrientationOptions,
   layoutViewOptions,
   StreamClustersSettings,
-  treemapViewOptions,
 } from "@/lib/settings/StreamClustersSettings";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { Separator } from "@/components/ui/separator";
@@ -28,7 +27,7 @@ import {
 import { Badge } from "../ui/badge";
 
 type LayoutMode = StreamClustersSettings["layoutMode"];
-type TreemapMode = StreamClustersSettings["treemapSignificanceMode"];
+// type TreemapMode = StreamClustersSettings["treemapSignificanceMode"];
 type Orientation = StreamClustersSettings["clusterAssignmentOrientation"];
 type Chart = StreamClustersSettings["chartMode"];
 
@@ -36,7 +35,7 @@ export const StreamClustersBar = () => {
   const {
     updateSettings,
     layoutMode,
-    treemapSignificanceMode,
+    // treemapSignificanceMode,
     clusterAssignmentHistoryDepth,
     clusterAssignmentOrientation,
     showClusterAssignments,
@@ -77,7 +76,7 @@ export const StreamClustersBar = () => {
           </SelectContent>
         </Select>
 
-        {layoutMode === "treemap" && (
+        {/* {layoutMode === "treemap" && (
           <>
             <Label>Treemap Significance</Label>
             <Select
@@ -108,7 +107,7 @@ export const StreamClustersBar = () => {
               </SelectContent>
             </Select>
           </>
-        )}
+        )} */}
       </SettingSection>
 
       <Separator orientation="vertical" className="mx-4" />

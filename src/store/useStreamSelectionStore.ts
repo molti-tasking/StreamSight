@@ -26,17 +26,21 @@ export const useStreamSelectionStore = create<StreamSelectionStore>(
       },
 
       add(value) {
+        console.log("Add entry");
         const { showStreamLabel } = useStreamClustersSettingsStore.getState();
         if (showStreamLabel) {
           set(({ values }) => ({ values: [...values, value] }));
         }
       },
       removeAtIndex(index) {
+        console.log("removeAtIndex entry");
+
         set(({ values }) => ({
           values: values.filter((currValue, currIndex) => currIndex !== index),
         }));
       },
       remove(value) {
+        console.log("remove entry");
         set(({ values }) => ({
           values: values.filter((currValue) => currValue !== value),
         }));

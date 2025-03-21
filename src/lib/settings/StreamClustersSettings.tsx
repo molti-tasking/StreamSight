@@ -16,14 +16,13 @@ export type StreamClustersSettings = z.infer<
   typeof streamClustersSettingsSchema
 >;
 
-export const layoutViewOptions: Record<
-  StreamClustersSettings["layoutMode"],
-  string
+export const layoutViewOptions: Omit<
+  Record<StreamClustersSettings["layoutMode"], string>,
+  "clusterMap"
 > = {
   treemap: "Treemap",
   grid: "Grid",
   list: "List",
-  clusterMap: "Cluster Map",
 };
 
 export const treemapViewOptions: Record<
@@ -34,14 +33,14 @@ export const treemapViewOptions: Record<
   clusterVariance: "Cluster variance",
 };
 
-export const chartViewOptions: Record<
-  StreamClustersSettings["chartMode"],
-  string
+export const chartViewOptions: Omit<
+  Record<StreamClustersSettings["chartMode"], string>,
+  "plotly"
 > = {
   highlighted: "Highlighted",
   multiline: "Multiline",
   envelope: "Envelope",
-  plotly: "Plotly",
+  // plotly: "Plotly",
 };
 export const clusterAssignmentOrientationOptions: Record<
   StreamClustersSettings["clusterAssignmentOrientation"],
