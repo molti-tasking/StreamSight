@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  layoutViewOptions,
   StreamClustersSettings,
   streamClustersSettingsSchema,
 } from "@/lib/settings/StreamClustersSettings";
@@ -19,14 +20,6 @@ import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSetting
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Switch } from "../ui/switch";
-
-const layoutViewOptions: Record<StreamClustersSettings["layoutMode"], string> =
-  {
-    treemap: "Treemap",
-    grid: "Grid",
-    list: "List",
-    clusterMap: "Cluster Map",
-  };
 
 const treemapViewOptions: Record<
   StreamClustersSettings["treemapSignificanceMode"],
