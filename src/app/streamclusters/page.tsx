@@ -1,7 +1,7 @@
 "use client";
 
 import { AggregatedClusterView } from "@/components/AggregatedClusterView";
-import { BaselineChart } from "@/components/charts/BaselineChart";
+import { BaselineClusterChart } from "@/components/charts/BaselineClusterChart";
 import {
   ClusteredLineChartGrid,
   ClusteredLineChartList,
@@ -90,7 +90,10 @@ const StreamClusters = () => {
 };
 
 const ChartViewDisplay = () => {
-  const { layoutMode } = useStreamClustersSettingsStore();
+  const layoutMode = useStreamClustersSettingsStore(
+    (state) => state.layoutMode
+  );
+  const clusters = useViewModelStore((state) => state.aggregated);
 
   if (layoutMode === "clusterMap") {
     return <AggregatedClusterView />;
@@ -101,7 +104,10 @@ const ChartViewDisplay = () => {
   } else if (layoutMode === "treemap") {
     return <TreemapLayout />;
   } else if (layoutMode === "baseline") {
-    return <BaselineChart />;
+    if (clusters.length < 2 || clusters[0].length < 2) {
+      return <p>Not enough data collected yet.</p>;
+    }
+    return <BaselineClusterChart />;
   }
   return (
     <div>

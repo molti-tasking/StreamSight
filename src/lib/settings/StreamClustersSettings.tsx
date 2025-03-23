@@ -20,9 +20,9 @@ export const layoutViewOptions: Omit<
   Record<StreamClustersSettings["layoutMode"], string>,
   "clusterMap"
 > = {
-  treemap: "Treemap",
-  grid: "Grid",
   list: "List",
+  grid: "Grid",
+  treemap: "Treemap",
   baseline: "Baseline",
 };
 
