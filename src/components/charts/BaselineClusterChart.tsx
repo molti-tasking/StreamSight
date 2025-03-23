@@ -59,8 +59,6 @@ export const BaselineClusterChart = () => {
     [values, clusters]
   );
 
-  console.log(spec);
-
   return (
     <div className="flex-1 flex flex-col gap-2 overflow-scroll">
       <VegaLite
