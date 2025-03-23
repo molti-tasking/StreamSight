@@ -2,7 +2,7 @@ import { SeparatorVertical, SeparatorHorizontal } from "lucide-react";
 import { z } from "zod";
 
 export const streamClustersSettingsSchema = z.object({
-  layoutMode: z.enum(["treemap", "grid", "list", "clusterMap"]),
+  layoutMode: z.enum(["treemap", "grid", "list", "baseline", "clusterMap"]),
   showClusterAssignments: z.coerce.boolean(),
   clusterAssignmentHistoryDepth: z.coerce.number(),
   clusterAssignmentOrientation: z.enum(["vertical", "horizontal"]),
@@ -23,6 +23,7 @@ export const layoutViewOptions: Omit<
   treemap: "Treemap",
   grid: "Grid",
   list: "List",
+  baseline: "Baseline",
 };
 
 export const treemapViewOptions: Record<

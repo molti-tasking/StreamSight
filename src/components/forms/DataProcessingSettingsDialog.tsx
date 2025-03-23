@@ -17,8 +17,8 @@ export function DataProcessingSettingsDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={(isOpen) => setIsOpen(isOpen)}>
       <DialogTrigger asChild className="cursor-pointer">
-        <Button variant="light">
-          <SettingsIcon /> Processing
+        <Button variant="ghost" size={"icon"}>
+          <SettingsIcon />
         </Button>
       </DialogTrigger>
       <DialogContent className="lg:max-w-3xl">

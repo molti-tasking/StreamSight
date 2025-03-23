@@ -1,6 +1,7 @@
 "use client";
 
 import { AggregatedClusterView } from "@/components/AggregatedClusterView";
+import { BaselineChart } from "@/components/charts/BaselineChart";
 import {
   ClusteredLineChartGrid,
   ClusteredLineChartList,
@@ -30,22 +31,23 @@ export default function StreamClustersPage() {
   return (
     <>
       <div className="flex flex-row justify-between border-b overflow-x-scroll">
-        <div className="text-white px-4 py-2 flex flex-col justify-between">
+        <div className="px-4 py-2 flex flex-col justify-between">
           <div className="flex items-center gap-8">
-            <Link href={"/"} className="bg-primary p-4 rounded-2xl">
-              <span className="font-semibold text-xl tracking-tight">
+            <Link href={"/"} className="bg-primary py-2 px-4 rounded-xs">
+              <span className="text-white font-semibold text-xl tracking-tight">
                 Stream Sight
               </span>
             </Link>
             {/* <ExplorationStuff /> */}
           </div>
-          <div className="flex flex-row justify-between gap-4 items-center my-2">
+          <div className="flex flex-row justify-end gap-2 items-center my-1">
+            <div className="text-muted-foreground">
+              {aggregated.length} clusters
+            </div>
+
             <div className="flex flex-row gap-2">
               <DataProcessingSettingsDialog />
               {/* <VisualizationSettingsDialog /> */}
-            </div>
-            <div className="text-muted-foreground">
-              {aggregated.length} clusters
             </div>
           </div>
         </div>
@@ -98,6 +100,8 @@ const ChartViewDisplay = () => {
     return <ClusteredLineChartList />;
   } else if (layoutMode === "treemap") {
     return <TreemapLayout />;
+  } else if (layoutMode === "baseline") {
+    return <BaselineChart />;
   }
   return (
     <div>
