@@ -128,8 +128,8 @@ export const DataSetForm = () => {
                 <CardHeader>
                   <CardTitle>GDP Streaming</CardTitle>
                   <CardDescription>
-                    212 parallel time series will be streamed from 19-something
-                    until 20-something
+                    212 parallel time series will be streamed from 1970 until
+                    2022
                   </CardDescription>
                 </CardHeader>
               </Card>
