@@ -95,7 +95,7 @@ export const DataSetForm = () => {
     if (data.dataSet === "peak-simulation") {
       updateData(
         "peaks",
-        data.peakSimulation.columns,
+        data.peakSimulation.columns + 1,
         data.peakSimulation.rows,
         data.peakSimulation.streamingInterval
       );

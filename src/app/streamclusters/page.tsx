@@ -7,6 +7,7 @@ import {
   ClusteredLineChartList,
 } from "@/components/ClusteredLineCharts";
 import { ClusterLegend } from "@/components/ClusterLegend";
+import { AllStreamsDialog } from "@/components/forms/AllStreamsDialog";
 import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import { TreemapLayout } from "@/components/TreemapLayout";
@@ -21,6 +22,7 @@ import { useEffect } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 export default function StreamClustersPage() {
+  const dimensions = useRawDataStore((store) => store.dimensions);
   const aggregated = useViewModelStore((store) => store.aggregated);
   const showClusterAssignments = useStreamClustersSettingsStore(
     (store) => store.showClusterAssignments
@@ -41,13 +43,13 @@ export default function StreamClustersPage() {
             {/* <ExplorationStuff /> */}
           </div>
           <div className="flex flex-row justify-end gap-2 items-center my-1">
-            <div className="text-muted-foreground">
-              {aggregated.length} clusters
+            <div className="text-muted-foreground text-sm">
+              {dimensions.length} streams / {aggregated.length} clusters
             </div>
 
-            <div className="flex flex-row gap-2">
+            <div className="flex flex-row gap-0.5">
+              <AllStreamsDialog />
               <DataProcessingSettingsDialog />
-              {/* <VisualizationSettingsDialog /> */}
             </div>
           </div>
         </div>

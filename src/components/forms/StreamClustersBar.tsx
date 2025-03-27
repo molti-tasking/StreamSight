@@ -225,7 +225,7 @@ export const StreamClustersBar = () => {
       <Separator orientation="vertical" className="mx-2" />
 
       <SettingSection title="Timeline">
-        <p>TBD</p>
+        <p className="flex w-full h-full items-center justify-center">TBD</p>
       </SettingSection>
 
       <Separator orientation="vertical" className="mx-2" />
