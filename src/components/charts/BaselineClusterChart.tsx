@@ -3,8 +3,11 @@ import { useViewModelStore } from "@/store/useViewModelStore";
 import { VegaLite, VisualizationSpec } from "react-vega";
 import { clusterColors } from "../clusterColors";
 import { useMemo } from "react";
+import { useRawDataStore } from "@/store/useRawDataStore";
 
 export const BaselineClusterChart = () => {
+  const rawData = useRawDataStore((state) => state.values);
+  const baseline = rawData[0];
   const clusters = useViewModelStore((state) => state.aggregated);
 
   const values: { group: string; value: number }[] = useMemo(() => {
@@ -14,10 +17,15 @@ export const BaselineClusterChart = () => {
       const dimensions = Object.keys(cluster[0]).filter(
         (key) => key !== "timestamp"
       );
-      const baseline = cluster[0];
+
       const dataSet = cluster[cluster.length - 1];
       dimensions.forEach((dimension) =>
-        arr.push({ group, value: dataSet[dimension] - baseline[dimension] })
+        arr.push({
+          group,
+          value:
+            (100 * (dataSet[dimension] - baseline[dimension])) /
+            baseline[dimension],
+        })
       );
     });
     return arr;
