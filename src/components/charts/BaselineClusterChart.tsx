@@ -4,11 +4,20 @@ import { VegaLite, VisualizationSpec } from "react-vega";
 import { clusterColors } from "../clusterColors";
 import { useMemo } from "react";
 import { useRawDataStore } from "@/store/useRawDataStore";
+import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 
 export const BaselineClusterChart = () => {
   const rawData = useRawDataStore((state) => state.values);
-  const baseline = rawData[0];
   const clusters = useViewModelStore((state) => state.aggregated);
+  const baselineDate = useStreamClustersSettingsStore(
+    (state) => state.baseline
+  );
+  const baseline: Record<string, number> = useMemo(
+    () =>
+      rawData.find((data) => new Date(data["timestamp"]) === baselineDate) ||
+      rawData[0],
+    [baselineDate]
+  );
 
   const values: { group: string; value: number }[] = useMemo(() => {
     const arr: { group: string; value: number }[] = [];
@@ -29,7 +38,7 @@ export const BaselineClusterChart = () => {
       );
     });
     return arr;
-  }, [clusters]);
+  }, [clusters, baseline]);
 
   const spec: VisualizationSpec = useMemo(
     () => ({

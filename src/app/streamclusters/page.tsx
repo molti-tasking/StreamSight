@@ -122,7 +122,7 @@ const ChartViewDisplay = () => {
 const ResetErrorBoundary = ({ resetErrorBoundary, error }: FallbackProps) => {
   return (
     <div>
-      <p>⚠️Something went wrong building the cluster map</p>
+      <p>⚠️Something went wrong building the views</p>
       <pre>{JSON.stringify(error, null, 2)}</pre>
       <Button onClick={resetErrorBoundary}>Reset Error</Button>
     </div>
