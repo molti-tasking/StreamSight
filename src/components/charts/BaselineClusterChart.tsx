@@ -71,7 +71,7 @@ export const BaselineClusterChart = () => {
     <div className="flex-1 flex flex-col gap-2 overflow-scroll">
       <VegaLite
         spec={spec}
-        actions={true}
+        actions={false}
         // style={{ cursor: "pointer" }}
         className={cn(
           "w-full h-full flex flex-1",

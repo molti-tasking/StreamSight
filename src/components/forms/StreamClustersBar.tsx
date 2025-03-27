@@ -46,6 +46,85 @@ export const StreamClustersBar = () => {
 
   return (
     <div className="flex flex-row">
+      <SettingSection title="Clusters">
+        <div className="flex flex-row items-center gap-2 space-y-0">
+          <Switch
+            id="showClusterAssignments-switch"
+            checked={showClusterAssignments}
+            onCheckedChange={(value) =>
+              updateSettings((settings) => ({
+                ...settings,
+                showClusterAssignments: value,
+              }))
+            }
+          />
+
+          <Label htmlFor="showClusterAssignments-switch">
+            Cluster assignment
+          </Label>
+        </div>
+
+        {showClusterAssignments && (
+          <div className="flex flex-row items-end gap-2">
+            <Tabs
+              value={clusterAssignmentOrientation}
+              onValueChange={(value) =>
+                updateSettings((settings) => ({
+                  ...settings,
+                  clusterAssignmentOrientation: value as Orientation,
+                }))
+              }
+            >
+              <TabsList>
+                {Object.entries(clusterAssignmentOrientationOptions).map(
+                  ([key, label]) => (
+                    <TabsTrigger value={key} key={key}>
+                      {label}
+                    </TabsTrigger>
+                  )
+                )}
+              </TabsList>
+            </Tabs>
+
+            <div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Label className="flex flex-row justify-between items-center gap-1.5">
+                      <span>Layers</span>
+                      <Badge
+                        variant={"secondary"}
+                        className="rounded-full h-4 w-4 text-[12px] m-1"
+                      >
+                        ?
+                      </Badge>
+                    </Label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Define the amount of how many cluster assignment history
+                    layers should be displayed.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <Input
+                type="number"
+                placeholder="Cluster Assignment History Depth"
+                value={clusterAssignmentHistoryDepth}
+                onChange={({ target }) =>
+                  updateSettings((settings) => ({
+                    ...settings,
+                    clusterAssignmentHistoryDepth: target.valueAsNumber,
+                  }))
+                }
+              />
+            </div>
+          </div>
+        )}
+      </SettingSection>
+
+      <Separator orientation="vertical" className="mx-2" />
+
       <SettingSection title="Layout">
         <Label>Layout</Label>
         <Select
@@ -110,88 +189,9 @@ export const StreamClustersBar = () => {
         )} */}
       </SettingSection>
 
-      <Separator orientation="vertical" className="mx-4" />
+      <Separator orientation="vertical" className="mx-2" />
 
-      <SettingSection title="Clusters">
-        <div className="flex flex-row items-center gap-2 space-y-0">
-          <Switch
-            id="showClusterAssignments-switch"
-            checked={showClusterAssignments}
-            onCheckedChange={(value) =>
-              updateSettings((settings) => ({
-                ...settings,
-                showClusterAssignments: value,
-              }))
-            }
-          />
-
-          <Label htmlFor="showClusterAssignments-switch">
-            Cluster assignment
-          </Label>
-        </div>
-
-        {showClusterAssignments && (
-          <div className="mt-2 flex flex-row items-end gap-2">
-            <Tabs
-              value={clusterAssignmentOrientation}
-              onValueChange={(value) =>
-                updateSettings((settings) => ({
-                  ...settings,
-                  clusterAssignmentOrientation: value as Orientation,
-                }))
-              }
-            >
-              <TabsList>
-                {Object.entries(clusterAssignmentOrientationOptions).map(
-                  ([key, label]) => (
-                    <TabsTrigger value={key} key={key}>
-                      {label}
-                    </TabsTrigger>
-                  )
-                )}
-              </TabsList>
-            </Tabs>
-
-            <div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label className="flex flex-row justify-between items-center gap-1.5">
-                      <span>Layers</span>
-                      <Badge
-                        variant={"secondary"}
-                        className="rounded-full h-4 w-4 text-[12px] m-1"
-                      >
-                        ?
-                      </Badge>
-                    </Label>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Define the amount of how many cluster assignment history
-                    layers should be displayed.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              <Input
-                type="number"
-                placeholder="Cluster Assignment History Depth"
-                value={clusterAssignmentHistoryDepth}
-                onChange={({ target }) =>
-                  updateSettings((settings) => ({
-                    ...settings,
-                    clusterAssignmentHistoryDepth: target.valueAsNumber,
-                  }))
-                }
-              />
-            </div>
-          </div>
-        )}
-      </SettingSection>
-
-      <Separator orientation="vertical" className="mx-4" />
-
-      <SettingSection title="Highlighting">
+      <SettingSection title="Time Series">
         <Label>Chart View Mode</Label>
         <Select
           value={chartMode}
@@ -222,9 +222,15 @@ export const StreamClustersBar = () => {
         </Select>
       </SettingSection>
 
-      <Separator orientation="vertical" className="mx-4" />
+      <Separator orientation="vertical" className="mx-2" />
 
-      <SettingSection title="Label / Annotation">
+      <SettingSection title="Timeline">
+        <p>TBD</p>
+      </SettingSection>
+
+      <Separator orientation="vertical" className="mx-2" />
+
+      <SettingSection title="Annotation">
         <div className="flex flex-row items-center gap-2 mb-2">
           <Switch
             id="showStreamLabel-switch"
@@ -237,7 +243,7 @@ export const StreamClustersBar = () => {
             }
           />
 
-          <Label htmlFor="showStreamLabel-switch">Stream Label</Label>
+          <Label htmlFor="showStreamLabel-switch">Hover Stream Label</Label>
         </div>
 
         <div className="flex flex-row items-center gap-2">
@@ -252,14 +258,8 @@ export const StreamClustersBar = () => {
             }
           />
 
-          <Label htmlFor="showClusterLegend-switch">Cluster Legend</Label>
+          <Label htmlFor="showClusterLegend-switch">Hover Cluster Legend</Label>
         </div>
-      </SettingSection>
-
-      <Separator orientation="vertical" className="mx-4" />
-
-      <SettingSection title="Animation">
-        <p>TBD</p>
       </SettingSection>
     </div>
   );
@@ -273,9 +273,9 @@ const SettingSection = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="grid justify-center gap-2 pt-2">
+    <div className="grid justify-center gap-2 pt-1 px-1">
       <div>{children}</div>
-      <div className="text-gray-500 font-bold text-xs uppercase text-center self-end mx-4">
+      <div className="text-gray-500 font-bold text-xs uppercase text-center self-end mx-2">
         {title}
       </div>
     </div>
