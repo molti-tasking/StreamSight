@@ -18,6 +18,7 @@ import {
 import { useState } from "react";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useRawDataStore } from "@/store/useRawDataStore";
+import { XIcon } from "lucide-react";
 
 export function BaselineSelectionDialog() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -43,13 +44,13 @@ export function BaselineSelectionDialog() {
             Choose the baseline for the processing
           </DialogDescription>
         </DialogHeader>
-        <BaselineSelection onClose={() => setIsOpen(false)} />
+        <BaselineSelection />
       </DialogContent>
     </Dialog>
   );
 }
 
-const BaselineSelection = ({ onClose }: { onClose: () => void }) => {
+const BaselineSelection = () => {
   const rawData = useRawDataStore((state) => state.values);
   const timestamps = rawData.map((data) => new Date(data["timestamp"]));
 
@@ -59,31 +60,44 @@ const BaselineSelection = ({ onClose }: { onClose: () => void }) => {
   );
 
   return (
-    <Select
-      value={baseline?.toJSON()}
-      onValueChange={(value) => {
-        updateSettings((settings) => ({
-          ...settings,
-          baseline: new Date(value),
-        }));
-        onClose();
-      }}
-    >
-      <SelectTrigger className="w-[180px]">
-        <div className="flex flex-row items-center gap-2">
-          <SelectValue placeholder={"Baseline"} className="justify-start" />
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectGroup>
-          {timestamps.map((timestamp) => (
-            <SelectItem value={timestamp.toJSON()} key={timestamp.toJSON()}>
-              {timestamp.toLocaleTimeString()}
-            </SelectItem>
-          ))}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
+    <div className="flex flex-row gap-2 items-center">
+      <Select
+        value={baseline?.toJSON()}
+        onValueChange={(value) =>
+          updateSettings((settings) => ({
+            ...settings,
+            baseline: new Date(value),
+          }))
+        }
+      >
+        <SelectTrigger className="w-[180px]">
+          <div className="flex flex-row items-center gap-2">
+            <SelectValue placeholder={"Baseline"} className="justify-start" />
+          </div>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {timestamps.map((timestamp) => (
+              <SelectItem value={timestamp.toJSON()} key={timestamp.toJSON()}>
+                {timestamp.toLocaleTimeString()}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Button
+        variant={"destructiveSubtle"}
+        disabled={!baseline}
+        onClick={() =>
+          updateSettings((settings) => ({
+            ...settings,
+            baseline: null,
+          }))
+        }
+      >
+        <XIcon className="mr-2" /> Remove baseline
+      </Button>
+    </div>
   );
 };
 

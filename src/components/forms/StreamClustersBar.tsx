@@ -192,7 +192,7 @@ export const StreamClustersBar = () => {
 
       <Separator orientation="vertical" className="mx-2" />
 
-      <SettingSection title="Time Series">
+      <SettingSection title="Visualization">
         <Label>Chart View Mode</Label>
         <Select
           value={chartMode}
