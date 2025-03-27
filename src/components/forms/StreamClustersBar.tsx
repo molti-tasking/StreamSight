@@ -25,6 +25,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { Badge } from "../ui/badge";
+import { BaselineSelectionDialog } from "./BaselineSelectionDialog";
 
 type LayoutMode = StreamClustersSettings["layoutMode"];
 // type TreemapMode = StreamClustersSettings["treemapSignificanceMode"];
@@ -225,7 +226,10 @@ export const StreamClustersBar = () => {
       <Separator orientation="vertical" className="mx-2" />
 
       <SettingSection title="Timeline">
-        <p className="flex w-full h-full items-center justify-center">TBD</p>
+        <Label>Baseline</Label>
+        <div>
+          <BaselineSelectionDialog />
+        </div>
       </SettingSection>
 
       <Separator orientation="vertical" className="mx-2" />

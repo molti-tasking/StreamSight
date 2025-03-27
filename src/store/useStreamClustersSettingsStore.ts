@@ -16,6 +16,7 @@ export const useStreamClustersSettingsStore =
       showClusterAssignments: true,
       clusterAssignmentHistoryDepth: 5,
       clusterAssignmentOrientation: "horizontal",
+      baseline: null,
       showStreamLabel: true,
       showClusterLegend: true,
 

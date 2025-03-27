@@ -4,6 +4,7 @@ import { z } from "zod";
 export const streamClustersSettingsSchema = z.object({
   layoutMode: z.enum(["treemap", "grid", "list", "baseline", "clusterMap"]),
   showClusterAssignments: z.coerce.boolean(),
+  baseline: z.date().nullable(),
   clusterAssignmentHistoryDepth: z.coerce.number(),
   clusterAssignmentOrientation: z.enum(["vertical", "horizontal"]),
   treemapSignificanceMode: z.enum(["clusterSize", "clusterVariance"]),
