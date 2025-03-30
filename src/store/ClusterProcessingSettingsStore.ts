@@ -1,6 +1,6 @@
 import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
+import { monitoringPeriodOptions } from "@/lib/utils";
 import { create } from "zustand";
-import { useRawDataStore } from "./useRawDataStore";
 
 export type ClusterProcessingSettingsStore = DataProcessingSettings & {
   updateSettings: (
@@ -10,10 +10,11 @@ export type ClusterProcessingSettingsStore = DataProcessingSettings & {
 
 export const useClusterProcessingSettingsStore =
   create<ClusterProcessingSettingsStore>((set, get) => {
-    const dataTicks = Math.min(useRawDataStore.getState().values.length, 50);
     return {
+      clusteringMode: "automatic",
+      manualClusterAssignments: {},
       eps: 80,
-      dataTicks,
+      monitoringPeriod: monitoringPeriodOptions["1 hour"],
       ignoreBoringDataMode: "off",
 
       updateSettings: (newSettings) => {

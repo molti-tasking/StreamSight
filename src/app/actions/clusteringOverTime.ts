@@ -1,9 +1,9 @@
 "use server";
 
-import { clusteringData } from "./clusteringData";
 import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings";
+import { clusteringData } from "./clusteringData";
 
-export type ClusterView = { timestamp: string; clusters: [string, number][] };
+export type ClusterView = { timestamp: number; clusters: [string, number][] };
 
 type ClusteringReturn = {
   /**
@@ -31,34 +31,25 @@ export const clusteringOverTime = async (
   // ----------------
   // Clustering context window: The amount of data entries that should be taken into consideration for handling the clusters later on.
   // ----------------
-  const clusteringContextWindow = !!settings.dataTicks
-    ? settings.dataTicks
-    : 20; // 20 just as a dump fallback value
+  const clusteringContextWindow = !!settings.monitoringPeriod
+    ? settings.monitoringPeriod
+    : 60 * 60 * 1000; // 1 hour just as a dump fallback value
 
   for (
     let dataEntryIndex = 0;
     dataEntryIndex < rawData.length;
     dataEntryIndex++
   ) {
-    /**
-     * We use a "slice", which excludes the last item of the list. So we have to add 1 the the end index as we only iterate within the list.
-     */
-    const endIndex = dataEntryIndex + 1;
-    /**
-     * This is the first value that should be taken into consideration for clustering.
-     */
-    const startIndex = endIndex - clusteringContextWindow;
-    if (startIndex < 0) {
-      // Skip all values below the context window size.
-      continue;
-    }
-
-    const dataToBeClustered = rawData.slice(startIndex, endIndex);
-
-    const timestamp =
+    const startTimestamp =
       "timestamp" in rawData[dataEntryIndex]
-        ? String(rawData[dataEntryIndex].timestamp)
-        : "";
+        ? Number(rawData[dataEntryIndex].timestamp)
+        : Date.now();
+
+    const endTimestamp = startTimestamp + clusteringContextWindow;
+
+    const dataToBeClustered = rawData
+      .slice(dataEntryIndex)
+      .filter((entry) => entry["timestamp"] <= endTimestamp);
 
     const aggregated = await clusteringData(
       dataToBeClustered,
@@ -71,7 +62,7 @@ export const clusteringOverTime = async (
       aggregated.findIndex((entries) => Object.keys(entries[0]).includes(val)),
     ]);
 
-    returnValues.push({ timestamp, clusters });
+    returnValues.push({ timestamp: startTimestamp, clusters });
   }
 
   return { clustersInTime: returnValues };

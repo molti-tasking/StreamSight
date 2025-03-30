@@ -23,3 +23,13 @@ export function deepMerge(
   }
   return result;
 }
+
+export const monitoringPeriodOptions = {
+  "1 min": 1 * 60 * 1000,
+  "10 min": 10 * 60 * 1000,
+  "1 hour": 60 * 60 * 1000,
+  "1 day": 24 * 60 * 60 * 1000,
+  "30 days": 30 * 24 * 60 * 60 * 1000,
+  "1 year": 365 * 24 * 60 * 60 * 1000,
+  "10 years": 10 * 365 * 24 * 60 * 60 * 1000,
+};

@@ -19,7 +19,11 @@ export const clusteringDBSCAN = async (
   ): number => {
     let sum = 0;
     for (const entry in pointA[1]) {
-      sum += (pointA[1][Number(entry)] - pointB[1][Number(entry)]) ** 2;
+      if (!pointA[1][Number(entry)] || !pointA[1][Number(entry)]) {
+        // We do not add to the distance if one of the values is unset.
+      } else {
+        sum += (pointA[1][Number(entry)] - pointB[1][Number(entry)]) ** 2;
+      }
     }
     return Math.sqrt(sum);
   };

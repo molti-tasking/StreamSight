@@ -1,11 +1,3 @@
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,10 +7,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useState } from "react";
-import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRawDataStore } from "@/store/useRawDataStore";
+import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { XIcon } from "lucide-react";
+import { useState } from "react";
 
 export function BaselineSelectionDialog() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -33,6 +33,7 @@ export function BaselineSelectionDialog() {
         <Button
           variant="ghost"
           className="italic text-xs text-muted-foreground"
+          size={"sm"}
         >
           {baselineText}
         </Button>

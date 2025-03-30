@@ -1,4 +1,4 @@
-import { SeparatorVertical, SeparatorHorizontal } from "lucide-react";
+import { SeparatorHorizontal, SeparatorVertical } from "lucide-react";
 import { z } from "zod";
 
 export const streamClustersSettingsSchema = z.object({

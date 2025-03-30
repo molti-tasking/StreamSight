@@ -14,17 +14,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
+import { cn, monitoringPeriodOptions } from "@/lib/utils";
+import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { ControllerRenderProps, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import { FormSubmitButton } from "../FormSubmitButton";
 import { Input } from "../ui/input";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 
 const formSchema = z.object({
   dataSet: z.enum(["S&P500", "GDP", "peak-simulation"]),
@@ -101,7 +101,11 @@ export const DataSetForm = () => {
       );
     } else {
       if (data.dataSet === "GDP") {
-        updateClustering((state) => ({ ...state, eps: 100000 }));
+        updateClustering((state) => ({
+          ...state,
+          eps: 100000,
+          monitoringPeriod: monitoringPeriodOptions["10 years"],
+        }));
       }
 
       loadDataset(data.dataSet);

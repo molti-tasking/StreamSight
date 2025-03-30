@@ -18,6 +18,8 @@ interface DataStore {
   ) => void;
 }
 
+const MAX_DATA_SET_LENGTH = 200;
+
 export const useRawDataStore = create<DataStore>((set, get) => {
   return {
     mode: "peaks",
@@ -139,8 +141,9 @@ const streamDataUpdate = () => {
   }
 
   // Add new row to values
+
   useRawDataStore.setState((state) => ({
-    values: [...state.values, newRow],
+    values: [...state.values.slice(-MAX_DATA_SET_LENGTH + 1), newRow],
   }));
 };
 

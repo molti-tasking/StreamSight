@@ -1,3 +1,5 @@
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -7,24 +9,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   chartViewOptions,
   clusterAssignmentOrientationOptions,
   layoutViewOptions,
   StreamClustersSettings,
 } from "@/lib/settings/StreamClustersSettings";
+import { monitoringPeriodOptions } from "@/lib/utils";
+import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "../ui/input";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { Switch } from "../ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
-import { Badge } from "../ui/badge";
 import { BaselineSelectionDialog } from "./BaselineSelectionDialog";
 
 type LayoutMode = StreamClustersSettings["layoutMode"];
@@ -44,6 +46,9 @@ export const StreamClustersBar = () => {
     showStreamLabel,
     showClusterLegend,
   } = useStreamClustersSettingsStore();
+
+  const { monitoringPeriod, ...dataProcessingStore } =
+    useClusterProcessingSettingsStore();
 
   return (
     <div className="flex flex-row">
@@ -226,15 +231,50 @@ export const StreamClustersBar = () => {
       <Separator orientation="vertical" className="mx-2" />
 
       <SettingSection title="Timeline">
-        <Label>Baseline</Label>
         <div>
-          <BaselineSelectionDialog />
+          <Label>Monitoring Period</Label>
+          <Select
+            value={String(monitoringPeriod)}
+            onValueChange={(value) =>
+              dataProcessingStore.updateSettings((settings) => ({
+                ...settings,
+                monitoringPeriod: Number(value),
+              }))
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <div className="flex flex-row items-center gap-2">
+                <SelectValue
+                  placeholder={"Layout Mode"}
+                  className="justify-start"
+                />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {Object.entries(monitoringPeriodOptions).map(
+                  ([label, value]) => (
+                    <SelectItem value={String(value)} key={label}>
+                      {label}
+                    </SelectItem>
+                  )
+                )}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
       </SettingSection>
 
       <Separator orientation="vertical" className="mx-2" />
 
       <SettingSection title="Annotation">
+        <div className="flex flex-row items-center justify-between">
+          <Label>Baseline</Label>
+          <div>
+            <BaselineSelectionDialog />
+          </div>
+        </div>
+
         <div className="flex flex-row items-center gap-2 mb-2">
           <Switch
             id="showStreamLabel-switch"

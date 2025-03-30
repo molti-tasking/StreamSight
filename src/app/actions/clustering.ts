@@ -1,7 +1,7 @@
 "use server";
-import { clusteringData } from "./clusteringData";
 import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings";
 import { dataWrappingProcess } from "../../lib/wrapping";
+import { clusteringData } from "./clusteringData";
 
 type AggregatedProps = {
   aggregated: Record<string, number>[][];
@@ -27,8 +27,14 @@ export const aggregator = async (
   // Filtering data to time
   // ----------------
   let dataToBeClustered = rawData;
-  if (dataProcessingSettings.dataTicks) {
-    dataToBeClustered = rawData.slice(-1 * dataProcessingSettings.dataTicks);
+  if (dataProcessingSettings.monitoringPeriod) {
+    const latestTimeValue =
+      rawData?.[rawData.length - 1]?.["timestamp"] ?? Date.now();
+
+    const minTime = latestTimeValue - dataProcessingSettings.monitoringPeriod;
+    dataToBeClustered = rawData.filter(
+      (entry) => entry["timestamp"] >= minTime
+    );
   }
 
   // ----------------
@@ -51,7 +57,9 @@ export const aggregator = async (
 
   const clusterAssignment: [string, number][] = dimensions.map((val) => [
     val,
-    aggregated.findIndex((entries) => Object.keys(entries[0]).includes(val)),
+    aggregated.findIndex((entries) =>
+      Object.keys(entries[0] ?? []).includes(val)
+    ),
   ]);
 
   // Calculate the shared y-axis domain across all clusters

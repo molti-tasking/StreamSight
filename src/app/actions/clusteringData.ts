@@ -1,22 +1,21 @@
 "use server";
-import { clusteringDBSCAN } from "./clusteringDBSCAN";
 import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings";
+import { clusteringDBSCAN } from "./clusteringDBSCAN";
 
 export const clusteringData = async (
   dataToBeClustered: Record<string, number>[],
   dimensions: string[],
   settings: DataProcessingSettings
 ) => {
-  if (dataToBeClustered.length !== settings.dataTicks) {
-    console.warn(
-      "The length of the data to be clustered does not match the specified data ticks amount."
-    );
-  }
   // ----------------
   // Clustering data
   // ----------------
 
-  if ("eps" in settings && !!settings.eps) {
+  if (
+    settings.clusteringMode === "automatic" &&
+    "eps" in settings &&
+    !!settings.eps
+  ) {
     // Here we are first putting all the different entries that are grouped by timestamp into another representation which is grouped by column. This way it will be easier to calculate a distance between those later on.
     // Convert entries grouped by timestamp into a representation grouped by column for easier distance calculation
     const allTimeSeries: [string, Record<number, number>][] = dimensions.map(
@@ -64,6 +63,11 @@ export const clusteringData = async (
 
       return result;
     });
+  } else if (
+    settings.clusteringMode === "manual" &&
+    !!Object.entries(settings.manualClusterAssignments).length
+  ) {
+    console.warn("TODO: Implement manual cluster assignments");
   }
 
   return [dataToBeClustered];

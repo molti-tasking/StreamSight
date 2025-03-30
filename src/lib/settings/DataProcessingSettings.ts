@@ -47,22 +47,32 @@
 
 import { z } from "zod";
 
-export const dataProcessingSettingsSchema = z.object({
-  eps: z.coerce.number(),
-  dataTicks: z.coerce.number().optional(),
-  timeScale: z
-    .object({
-      from: z.coerce.number(),
-      to: z.coerce.number(),
-    })
-    .optional(),
-  ignoreBoringDataMode: z.enum(["off", "standard"]),
+const manualClusterAssignmentSchema = z.record(z.string(), z.number());
 
-  meanRange: z.coerce.number().optional(),
-  tickRange: z.coerce.number().optional(),
-  saveScreenSpace: z.boolean().optional(),
+export const dataProcessingSettingsSchema = z.object({
+  clusteringMode: z.enum(["automatic", "manual"]),
+  manualClusterAssignments: manualClusterAssignmentSchema,
+  eps: z.coerce.number(),
+
+  /**
+   * Period from now in ms that should be displayed
+   */
+  monitoringPeriod: z.coerce.number().optional(),
+
+  // ignoreBoringDataMode: z.enum(["off", "standard"]),
+  // meanRange: z.coerce.number().optional(),
+  // tickRange: z.coerce.number().optional(),
+  // saveScreenSpace: z.boolean().optional(),
 });
 
 export type DataProcessingSettings = z.infer<
   typeof dataProcessingSettingsSchema
 >;
+
+export const clusteringModeOptions: Record<
+  DataProcessingSettings["clusteringMode"],
+  string
+> = {
+  automatic: "Automatic (DBSCAN)",
+  manual: "Manual Assignment",
+};

@@ -1,15 +1,15 @@
+import { aggregator } from "@/app/actions/clustering";
 import {
   clusteringOverTime,
   ClusterView,
 } from "@/app/actions/clusteringOverTime";
+import { highlighter } from "@/app/actions/highlighting";
+import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
 import _ from "lodash";
 import { create } from "zustand";
 import { useClusterProcessingSettingsStore } from "./ClusterProcessingSettingsStore";
 import { useRawDataStore } from "./useRawDataStore";
 import { useStreamClustersSettingsStore } from "./useStreamClustersSettingsStore";
-import { highlighter } from "@/app/actions/highlighting";
-import { aggregator } from "@/app/actions/clustering";
-import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
 
 interface DataStore {
   aggregated: Record<string, number>[][];
@@ -46,21 +46,15 @@ export const useViewModelStore = create<DataStore>((set, get) => {
 
       const {
         eps,
-        ignoreBoringDataMode,
-        dataTicks,
-        timeScale,
-        meanRange,
-        tickRange,
-        saveScreenSpace,
+        clusteringMode,
+        manualClusterAssignments,
+        monitoringPeriod,
       } = useClusterProcessingSettingsStore.getState();
       const dataProcessingSettings: DataProcessingSettings = {
         eps,
-        ignoreBoringDataMode,
-        dataTicks,
-        timeScale,
-        meanRange,
-        tickRange,
-        saveScreenSpace,
+        clusteringMode,
+        manualClusterAssignments,
+        monitoringPeriod,
       };
       console.log("Clustering with: ", dataProcessingSettings.eps);
       const aggregated = await aggregator(
@@ -121,21 +115,15 @@ export const useViewModelStore = create<DataStore>((set, get) => {
 
       const {
         eps,
-        ignoreBoringDataMode,
-        dataTicks,
-        timeScale,
-        meanRange,
-        tickRange,
-        saveScreenSpace,
+        clusteringMode,
+        manualClusterAssignments,
+        monitoringPeriod,
       } = useClusterProcessingSettingsStore.getState();
       const dataProcessingSettings: DataProcessingSettings = {
         eps,
-        ignoreBoringDataMode,
-        dataTicks,
-        timeScale,
-        meanRange,
-        tickRange,
-        saveScreenSpace,
+        clusteringMode,
+        manualClusterAssignments,
+        monitoringPeriod,
       };
 
       const { clustersInTime } = await clusteringOverTime(
