@@ -1,7 +1,33 @@
 import { cn, deepMerge } from "@/lib/utils";
-import { VegaLite, type VisualizationSpec } from "react-vega";
+import dynamic from "next/dynamic";
+import { type VisualizationSpec } from "react-vega";
 import { ChartProps } from "./ChartProps";
 import { LegendButton } from "./LegendButton";
+const VegaLite = dynamic(() => import("react-vega").then((m) => m.VegaLite), {
+  ssr: false,
+});
+/**
+ * Add this code for the baseline reference visualisation into the layer array:
+ * 
+ * 
+ *     {
+      "mark": {"opacity": 0.3, "type": "area", "color": "#85C5A6"},
+      "encoding": {
+        "y": {
+          "aggregate": "average",
+          "field": "temp_max",
+          "scale": {"domain": [0, 30]},
+          "title": "Avg. Temperature (°C)",
+          "axis": {"titleColor": "#85C5A6"}
+        },
+
+        "y2": {
+          "aggregate": "average",
+          "field": "temp_min"
+        }
+      }
+    },
+ */
 
 const chartModeSpecs: Record<
   "multiline" | "envelope",
@@ -141,7 +167,7 @@ export const VegaLiteChart = ({
       y: {
         field: "value",
         type: "quantitative",
-        scale: { domain: yDomain },
+        ...(!!yDomain && { scale: { domain: yDomain } }),
         title: null,
         axis: {
           labelPadding: -20,

@@ -10,15 +10,15 @@ export type StreamClustersSettingsStore = StreamClustersSettings & {
 export const useStreamClustersSettingsStore =
   create<StreamClustersSettingsStore>((set, get) => {
     return {
-      layoutMode: "grid",
+      layoutMode: "list",
       treemapSignificanceMode: "clusterSize",
-      chartMode: "highlighted",
+      chartMode: "multiline",
       showClusterAssignments: true,
       clusterAssignmentHistoryDepth: 5,
-      clusterAssignmentOrientation: "horizontal",
+      clusterAssignmentOrientation: "vertical",
       baseline: null,
-      showStreamLabel: true,
-      showClusterLegend: true,
+      showStreamLabel: false,
+      showClusterLegend: false,
 
       updateSettings: (newSettings) => {
         const newValues = newSettings(get());

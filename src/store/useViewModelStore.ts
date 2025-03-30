@@ -37,71 +37,70 @@ interface DataStore {
 export const useViewModelStore = create<DataStore>((set, get) => {
   console.log("init view model store");
 
-  const throttledDataProcess = _.throttle(
-    async () => {
-      const dimensions = useRawDataStore.getState().dimensions;
-      const values = useRawDataStore.getState().values;
-      const { chartMode, clusterAssignmentHistoryDepth } =
-        useStreamClustersSettingsStore.getState();
+  const throttledDataProcess = async () => {
+    const dimensions = useRawDataStore.getState().dimensions;
+    const rawVals = useRawDataStore.getState().values;
+    const values = JSON.parse(JSON.stringify(rawVals));
+    const { chartMode, clusterAssignmentHistoryDepth } =
+      useStreamClustersSettingsStore.getState();
 
-      const {
-        eps,
-        clusteringMode,
-        manualClusterAssignments,
-        monitoringPeriod,
-      } = useClusterProcessingSettingsStore.getState();
-      const dataProcessingSettings: DataProcessingSettings = {
-        eps,
-        clusteringMode,
-        manualClusterAssignments,
-        monitoringPeriod,
-      };
-      console.log("Clustering with: ", dataProcessingSettings.eps);
-      const aggregated = await aggregator(
-        values,
-        dimensions,
-        dataProcessingSettings
+    const { eps, clusteringMode, manualClusterAssignments, monitoringPeriod } =
+      useClusterProcessingSettingsStore.getState();
+    const dataProcessingSettings: DataProcessingSettings = {
+      eps,
+      clusteringMode,
+      manualClusterAssignments,
+      monitoringPeriod,
+    };
+
+    console.log("Settings properties:", values);
+    const symb = values.find((entry) => {
+      const vals = Object.values(entry);
+      const symb = vals.find((val) => Object.getOwnPropertySymbols(val));
+      console.log("Symb: ", symb);
+      return !!symb;
+    });
+    console.log("Symbol: ", symb);
+    let aggregated;
+    try {
+      aggregated = await aggregator(values, dimensions, dataProcessingSettings);
+    } catch (error) {
+      console.count("Ignore error.");
+      return;
+    }
+
+    console.log("Found amount of clusters: ", aggregated.aggregated.length);
+    const lastTimestamp =
+      values?.[values.length - 1]?.["timestamp"] ?? Date.now();
+    const clusterAssignment: [string, number][] = aggregated.clusterAssignment;
+
+    const clusterAssignmentHistory = get().clusterAssignmentHistory;
+    const updatedClusterAssignmentHistory = clusterAssignmentHistory
+      .toSpliced(0, 0, {
+        timestamp: lastTimestamp,
+        entries: clusterAssignment,
+      })
+      .slice(0, 20);
+
+    let highlightInfo: {
+      dimension: string;
+      opacity: number;
+      lastDimension: number | undefined;
+    }[][] = [];
+    if (chartMode === "highlighted") {
+      highlightInfo = await highlighter(
+        aggregated.aggregated,
+        clusterAssignment,
+        updatedClusterAssignmentHistory.slice(0, clusterAssignmentHistoryDepth)
       );
+    }
 
-      console.log("Found amount of clusters: ", aggregated.aggregated.length);
-      const lastTimestamp =
-        values?.[values.length - 1]?.["timestamp"] ?? Date.now();
-      const clusterAssignment: [string, number][] =
-        aggregated.clusterAssignment;
-
-      const clusterAssignmentHistory = get().clusterAssignmentHistory;
-      const updatedClusterAssignmentHistory = clusterAssignmentHistory
-        .toSpliced(0, 0, {
-          timestamp: lastTimestamp,
-          entries: clusterAssignment,
-        })
-        .slice(0, 20);
-
-      let highlightInfo: {
-        dimension: string;
-        opacity: number;
-        lastDimension: number | undefined;
-      }[][] = [];
-      if (chartMode === "highlighted") {
-        highlightInfo = await highlighter(
-          aggregated.aggregated,
-          clusterAssignment,
-          updatedClusterAssignmentHistory.slice(
-            0,
-            clusterAssignmentHistoryDepth
-          )
-        );
-      }
-
-      set({
-        ...aggregated,
-        clusterAssignmentHistory: updatedClusterAssignmentHistory,
-        highlightInfo,
-      });
-    },
-    2000,
-    { trailing: true, leading: false }
-  );
+    set({
+      ...aggregated,
+      clusterAssignmentHistory: updatedClusterAssignmentHistory,
+      highlightInfo,
+    });
+  };
 
   const throttledClustersInTimeProcess = _.throttle(
     async () => {

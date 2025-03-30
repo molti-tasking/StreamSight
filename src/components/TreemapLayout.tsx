@@ -1,9 +1,7 @@
 import { clusterColors } from "@/components/clusterColors";
 import { useContainerDimensions } from "@/components/useContainerDimensions";
-import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
-import { useRawDataStore } from "@/store/useRawDataStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Chart } from "./Chart";
 import { TreemapCharts } from "./TreemapCharts";
 
@@ -13,15 +11,6 @@ export function TreemapLayout() {
 
   const ref = useRef<HTMLDivElement>(null);
   const { height, width } = useContainerDimensions(ref);
-
-  const processData = useViewModelStore((state) => state.processData);
-  const values = useRawDataStore((state) => state.values);
-
-  const presentationSettings = useClusterProcessingSettingsStore();
-
-  useEffect(() => {
-    processData();
-  }, [presentationSettings, values]);
 
   console.log("Render aggregated treemap");
   return (

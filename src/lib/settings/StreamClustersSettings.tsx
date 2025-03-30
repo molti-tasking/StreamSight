@@ -8,7 +8,7 @@ export const streamClustersSettingsSchema = z.object({
   clusterAssignmentHistoryDepth: z.coerce.number(),
   clusterAssignmentOrientation: z.enum(["vertical", "horizontal"]),
   treemapSignificanceMode: z.enum(["clusterSize", "clusterVariance"]),
-  chartMode: z.enum(["highlighted", "multiline", "envelope", "plotly"]),
+  chartMode: z.enum(["multiline", "highlighted", "envelope", "plotly"]),
   showStreamLabel: z.coerce.boolean(),
   showClusterLegend: z.coerce.boolean(),
 });
@@ -39,8 +39,8 @@ export const chartViewOptions: Omit<
   Record<StreamClustersSettings["chartMode"], string>,
   "plotly"
 > = {
-  highlighted: "Highlighted",
   multiline: "Multiline",
+  highlighted: "Highlighted",
   envelope: "Envelope",
   // plotly: "Plotly",
 };

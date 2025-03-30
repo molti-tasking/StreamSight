@@ -1,6 +1,9 @@
 import { useRawDataStore } from "@/store/useRawDataStore";
-import { VegaLite, type VisualizationSpec } from "react-vega";
-
+import dynamic from "next/dynamic";
+import { type VisualizationSpec } from "react-vega";
+const VegaLite = dynamic(() => import("react-vega").then((m) => m.VegaLite), {
+  ssr: false,
+});
 export const MultiLineChart = () => {
   const dimensions = useRawDataStore((state) => state.dimensions);
   const values = useRawDataStore((state) => state.values);

@@ -4,7 +4,7 @@ import { ClassValue } from "clsx";
 export type ChartProps = {
   values: Record<string, number>[];
   className?: ClassValue;
-  yDomain: [number, number];
+  yDomain?: [number, number];
   saveScreenSpace?: boolean;
   mode: StreamClustersSettings["chartMode"];
 };

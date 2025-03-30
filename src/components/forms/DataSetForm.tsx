@@ -57,7 +57,7 @@ export const DataSetForm = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      dataSet: "GDP",
+      dataSet: "peak-simulation",
       peakSimulation:
         values.length && dimensions.length
           ? {
@@ -128,24 +128,6 @@ export const DataSetForm = () => {
           name="dataSet"
           render={({ field }) => (
             <div className="flex flex-col gap-4">
-              <Card {...getCardProps("GDP", field)}>
-                <CardHeader>
-                  <CardTitle>GDP Streaming</CardTitle>
-                  <CardDescription>
-                    212 parallel time series will be streamed from 1970 until
-                    2022
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <Card {...getCardProps("S&P500", field)}>
-                <CardHeader>
-                  <CardTitle>S&P 500 Streaming</CardTitle>
-                  <CardDescription>
-                    500 parallel time series of S&P 500 stock values on a daily
-                    basis
-                  </CardDescription>
-                </CardHeader>
-              </Card>
               <Card {...getCardProps("peak-simulation", field)}>
                 <CardHeader>
                   <CardTitle>Peaking Data Simulation</CardTitle>
@@ -220,7 +202,24 @@ export const DataSetForm = () => {
                   />
                 </CardContent>
               </Card>
-
+              <Card {...getCardProps("GDP", field)}>
+                <CardHeader>
+                  <CardTitle>GDP Streaming</CardTitle>
+                  <CardDescription>
+                    212 parallel time series will be streamed from 1970 until
+                    2022
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+              <Card {...getCardProps("S&P500", field)}>
+                <CardHeader>
+                  <CardTitle>S&P 500 Streaming</CardTitle>
+                  <CardDescription>
+                    500 parallel time series of S&P 500 stock values on a daily
+                    basis
+                  </CardDescription>
+                </CardHeader>
+              </Card>
               <FormMessage />
             </div>
           )}

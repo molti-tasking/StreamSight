@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +20,7 @@ import { useRawDataStore } from "@/store/useRawDataStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { XIcon } from "lucide-react";
 import { useState } from "react";
+import { VegaLiteChartBaselineSelection } from "../charts/VegaLiteChartBaselineSelection";
 
 export function BaselineSelectionDialog() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -60,44 +62,45 @@ const BaselineSelection = () => {
     (state) => state.updateSettings
   );
 
+  const updateBaseline = (newBaseline: number | string | null) => {
+    updateSettings((settings) => ({
+      ...settings,
+
+      baseline: newBaseline ? new Date(newBaseline) : null,
+    }));
+  };
+
   return (
-    <div className="flex flex-row gap-2 items-center">
-      <Select
-        value={baseline?.toJSON()}
-        onValueChange={(value) =>
-          updateSettings((settings) => ({
-            ...settings,
-            baseline: new Date(value),
-          }))
-        }
-      >
-        <SelectTrigger className="w-[180px]">
-          <div className="flex flex-row items-center gap-2">
-            <SelectValue placeholder={"Baseline"} className="justify-start" />
-          </div>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {timestamps.map((timestamp) => (
-              <SelectItem value={timestamp.toJSON()} key={timestamp.toJSON()}>
-                {timestamp.toLocaleTimeString()}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <Button
-        variant={"destructiveSubtle"}
-        disabled={!baseline}
-        onClick={() =>
-          updateSettings((settings) => ({
-            ...settings,
-            baseline: null,
-          }))
-        }
-      >
-        <XIcon className="mr-2" /> Remove baseline
-      </Button>
+    <div>
+      <div className="flex flex-row gap-2 items-center justify-end mb-2">
+        <Select value={baseline?.toJSON()} onValueChange={updateBaseline}>
+          <SelectTrigger className="w-[180px]">
+            <div className="flex flex-row items-center gap-2">
+              <SelectValue placeholder={"Baseline"} className="justify-start" />
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {timestamps.map((timestamp) => (
+                <SelectItem value={timestamp.toJSON()} key={timestamp.toJSON()}>
+                  {timestamp.toLocaleTimeString()}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+        <Button
+          variant={"destructiveSubtle"}
+          disabled={!baseline}
+          onClick={() => updateBaseline(null)}
+        >
+          <XIcon className="mr-2" /> Remove baseline
+        </Button>
+      </div>
+
+      <div>
+        <VegaLiteChartBaselineSelection onSelect={updateBaseline} />
+      </div>
     </div>
   );
 };

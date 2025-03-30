@@ -1,11 +1,14 @@
 import { cn } from "@/lib/utils";
-import { useViewModelStore } from "@/store/useViewModelStore";
-import { VegaLite, VisualizationSpec } from "react-vega";
-import { clusterColors } from "../clusterColors";
-import { useMemo } from "react";
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
-
+import { useViewModelStore } from "@/store/useViewModelStore";
+import dynamic from "next/dynamic";
+import { useMemo } from "react";
+import { VisualizationSpec } from "react-vega";
+import { clusterColors } from "../clusterColors";
+const VegaLite = dynamic(() => import("react-vega").then((m) => m.VegaLite), {
+  ssr: false,
+});
 export const BaselineClusterChart = () => {
   const rawData = useRawDataStore((state) => state.values);
   const clusters = useViewModelStore((state) => state.aggregated);

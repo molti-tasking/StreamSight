@@ -1,7 +1,10 @@
 import { cn } from "@/lib/utils";
 import { useRawDataStore } from "@/store/useRawDataStore";
-import { VegaLite, VisualizationSpec } from "react-vega";
-
+import dynamic from "next/dynamic";
+import { VisualizationSpec } from "react-vega";
+const VegaLite = dynamic(() => import("react-vega").then((m) => m.VegaLite), {
+  ssr: false,
+});
 export const BaselineChart = () => {
   const rawData = useRawDataStore((state) => state.values);
   const dimensions = useRawDataStore((state) => state.dimensions);

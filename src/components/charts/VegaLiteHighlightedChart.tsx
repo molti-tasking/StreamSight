@@ -1,11 +1,14 @@
 import { cn } from "@/lib/utils";
-import { VegaLite, type VisualizationSpec } from "react-vega";
+import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
+import dynamic from "next/dynamic";
+import { type VisualizationSpec } from "react-vega";
+import { UnitSpec } from "vega-lite/build/src/spec";
 import { clusterColors } from "../clusterColors";
 import { ChartProps } from "./ChartProps";
-import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
-import { UnitSpec } from "vega-lite/build/src/spec";
 import { LegendButton } from "./LegendButton";
-
+const VegaLite = dynamic(() => import("react-vega").then((m) => m.VegaLite), {
+  ssr: false,
+});
 export const VegaLiteHighlightedChart = ({
   values,
   chartColor,

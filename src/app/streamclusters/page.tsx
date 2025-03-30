@@ -17,8 +17,9 @@ import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSett
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
+import _ from "lodash";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 
 export default function StreamClustersPage() {
@@ -79,8 +80,20 @@ const StreamClusters = () => {
   const values = useRawDataStore((state) => state.values);
   const presentationSettings = useClusterProcessingSettingsStore();
   const processData = useViewModelStore((state) => state.processData);
+
+  // Create a throttled version of processData that runs at most once every 1000ms.
+  const throttledProcessData = useMemo(
+    () => _.throttle(processData, 1000),
+    [processData]
+  );
+
   useEffect(() => {
-    processData();
+    throttledProcessData();
+
+    // Clean up any pending throttled calls when the component unmounts or dependencies change.
+    return () => {
+      throttledProcessData.cancel();
+    };
   }, [presentationSettings, values, processData]);
 
   return (
