@@ -30,7 +30,6 @@ export const VegaLiteChartBaselineSelection = React.memo(
       view.addSignalListener("clicked", (_, value) => {
         if (value && value.timestamp && value.timestamp?.[0]) {
           const timestamp = value.timestamp[0];
-          console.log("Clicked timestamp: ", timestamp);
           onSelect(timestamp);
         }
       });

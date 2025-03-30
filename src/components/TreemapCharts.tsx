@@ -114,7 +114,6 @@ export const TreemapCharts = ({
   useEffect(() => {
     buildTreemap();
   }, [height, width, props.leaves]);
-  console.log("Render treemap with leaves: ", props.leaves?.length);
   return (
     <div style={{ position: "relative", width, height }}>
       <svg ref={svgRef} style={{ position: "absolute", top: 0, left: 0 }} />

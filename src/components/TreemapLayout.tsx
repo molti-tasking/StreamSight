@@ -12,7 +12,6 @@ export function TreemapLayout() {
   const ref = useRef<HTMLDivElement>(null);
   const { height, width } = useContainerDimensions(ref);
 
-  console.log("Render aggregated treemap");
   return (
     <div ref={ref} className="flex-1 min-h-20">
       <TreemapCharts

@@ -22,6 +22,9 @@ export const Chart = ({
 }) => {
   const yDomain = useViewModelStore((state) => state.yDomain);
   const mode = useStreamClustersSettingsStore((state) => state.chartMode);
+  const baselineValues = useStreamClustersSettingsStore(
+    (state) => state.baselineValues
+  );
 
   if (mode === "plotly") {
     return (
@@ -47,6 +50,7 @@ export const Chart = ({
 
   return (
     <VegaLiteChart
+      baselineValues={baselineValues}
       values={values}
       className={className}
       yDomain={yDomain}

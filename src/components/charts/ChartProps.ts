@@ -7,4 +7,5 @@ export type ChartProps = {
   yDomain?: [number, number];
   saveScreenSpace?: boolean;
   mode: StreamClustersSettings["chartMode"];
+  baselineValues?: StreamClustersSettings["baselineValues"];
 };

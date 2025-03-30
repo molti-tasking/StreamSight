@@ -63,10 +63,13 @@ const BaselineSelection = () => {
   );
 
   const updateBaseline = (newBaseline: number | string | null) => {
+    const baselineValues = rawData.find(
+      (entry) => entry["timestamp"] === newBaseline
+    );
     updateSettings((settings) => ({
       ...settings,
-
       baseline: newBaseline ? new Date(newBaseline) : null,
+      baselineValues,
     }));
   };
 

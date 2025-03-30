@@ -29,8 +29,6 @@ export async function* streamDataSet(
 ): AsyncGenerator<DataEntry> {
   const dataEntries: DataEntry[] = await fetchDataSet(dataSet);
 
-  console.log("Stream of data set. Entries count: ", dataSet.length);
-
   for (const item of dataEntries) {
     yield new Promise<DataEntry>((resolve) => {
       safeRequestIdleCallback(() => resolve(item), minTimeout);

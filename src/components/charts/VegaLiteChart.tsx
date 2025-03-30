@@ -136,10 +136,21 @@ export const VegaLiteChart = ({
   yDomain,
   saveScreenSpace,
   mode,
+  baselineValues,
 }: ChartProps) => {
   const dimensions = values.length
     ? Object.keys(values[0]).filter((e) => e !== "timestamp")
     : [];
+  const clusterBaselines = baselineValues
+    ? dimensions.map((dim) => baselineValues[dim])
+    : undefined;
+  const minBaseline = clusterBaselines
+    ? Math.min(...clusterBaselines)
+    : undefined;
+  const maxBaseline = clusterBaselines
+    ? Math.max(...clusterBaselines)
+    : undefined;
+
   const dataSpec: Partial<VisualizationSpec> = {
     $schema: "https://vega.github.io/schema/vega-lite/v5.json",
     width: "container",
@@ -156,28 +167,50 @@ export const VegaLiteChart = ({
     data: { values },
     transform: [{ fold: dimensions, as: ["variable", "value"] }],
 
-    mark: "line",
-    encoding: {
-      x: {
-        field: "timestamp",
-        type: !!saveScreenSpace ? "ordinal" : "temporal",
-        axis: !!saveScreenSpace ? { labelExpr: "" } : {},
-        title: null,
-      },
-      y: {
-        field: "value",
-        type: "quantitative",
-        ...(!!yDomain && { scale: { domain: yDomain } }),
-        title: null,
-        axis: {
-          labelPadding: -20,
-          labelOpacity: 0.5,
-          ticks: false,
-          domain: false,
+    layer: [
+      ...(minBaseline && maxBaseline
+        ? [
+            {
+              mark: { type: "area", opacity: 0.5 },
+              encoding: {
+                x: { field: "timestamp", type: "temporal" },
+                y: { datum: minBaseline },
+                y2: { datum: maxBaseline },
+                color: { value: "lightgrey" },
+              },
+            } as const,
+          ]
+        : []),
+      {
+        mark: "line",
+        encoding: {
+          x: {
+            field: "timestamp",
+            type: !!saveScreenSpace ? "ordinal" : "temporal",
+            axis: !!saveScreenSpace ? { labelExpr: "" } : {},
+            title: null,
+          },
+          y: {
+            field: "value",
+            type: "quantitative",
+            ...(!!yDomain && { scale: { domain: yDomain } }),
+            title: null,
+            axis: {
+              labelPadding: -20,
+              labelOpacity: 0.5,
+              ticks: false,
+              domain: false,
+            },
+          },
+          color: {
+            field: "variable",
+            type: "nominal",
+            title: null,
+            legend: null,
+          },
         },
       },
-      color: { legend: null },
-    },
+    ],
   };
 
   // I don't 100% know why, but as of now it was very important to keep this order of the specs how they are getting passed into the merge function. Otherwise, the vizualisation breaks.

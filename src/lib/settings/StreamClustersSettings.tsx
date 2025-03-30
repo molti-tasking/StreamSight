@@ -1,10 +1,13 @@
 import { SeparatorHorizontal, SeparatorVertical } from "lucide-react";
 import { z } from "zod";
 
+const baselineValuesSchema = z.record(z.string(), z.number()).optional();
+
 export const streamClustersSettingsSchema = z.object({
   layoutMode: z.enum(["treemap", "grid", "list", "baseline", "clusterMap"]),
   showClusterAssignments: z.coerce.boolean(),
   baseline: z.date().nullable(),
+  baselineValues: baselineValuesSchema,
   clusterAssignmentHistoryDepth: z.coerce.number(),
   clusterAssignmentOrientation: z.enum(["vertical", "horizontal"]),
   treemapSignificanceMode: z.enum(["clusterSize", "clusterVariance"]),

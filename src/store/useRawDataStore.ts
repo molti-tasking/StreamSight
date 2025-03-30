@@ -18,7 +18,7 @@ interface DataStore {
   ) => void;
 }
 
-const MAX_DATA_SET_LENGTH = 200;
+const MAX_DATA_SET_LENGTH = 100;
 
 export const useRawDataStore = create<DataStore>((set, get) => {
   return {

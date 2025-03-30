@@ -10,7 +10,6 @@ export const MultiLineChart = () => {
   const times = values
     .map((v) => v["timestamp"])
     .filter((_, index) => index % 5 === 0);
-  console.log(times);
 
   const spec: VisualizationSpec = {
     $schema: "https://vega.github.io/schema/vega-lite/v5.json",
