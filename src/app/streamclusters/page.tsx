@@ -8,7 +8,6 @@ import {
 } from "@/components/ClusteredLineCharts";
 import { ClusterLegend } from "@/components/ClusterLegend";
 import { AllStreamsDialog } from "@/components/forms/AllStreamsDialog";
-import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import { TreemapLayout } from "@/components/TreemapLayout";
 import { Button } from "@/components/ui/button";
@@ -50,7 +49,7 @@ export default function StreamClustersPage() {
 
             <div className="flex flex-row gap-0.5">
               <AllStreamsDialog />
-              <DataProcessingSettingsDialog />
+              {/* <DataProcessingSettingsDialog /> */}
             </div>
           </div>
         </div>

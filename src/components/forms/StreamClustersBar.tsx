@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { clusteringModeOptions } from "@/lib/settings/DataProcessingSettings";
 import {
   chartViewOptions,
   clusterAssignmentOrientationOptions,
@@ -26,8 +27,13 @@ import {
   StreamClustersSettings,
 } from "@/lib/settings/StreamClustersSettings";
 import { monitoringPeriodOptions } from "@/lib/utils";
-import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
+import {
+  ClusterProcessingSettingsStore,
+  useClusterProcessingSettingsStore,
+} from "@/store/ClusterProcessingSettingsStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
+import { FolderOpenIcon } from "lucide-react";
+import { Button } from "../ui/button";
 import { BaselineSelectionDialog } from "./BaselineSelectionDialog";
 
 type LayoutMode = StreamClustersSettings["layoutMode"];
@@ -48,13 +54,66 @@ export const StreamClustersBar = () => {
     showClusterLegend,
   } = useStreamClustersSettingsStore();
 
-  const { monitoringPeriod, ...dataProcessingStore } =
+  const { clusteringMode, eps, monitoringPeriod, ...dataProcessingStore } =
     useClusterProcessingSettingsStore();
 
   return (
     <div className="flex flex-row">
       <SettingSection title="Clusters">
-        <div className="flex flex-row items-center gap-2 space-y-0">
+        <div className="flex flex-row items-end gap-2">
+          <div>
+            <Label>Clustering</Label>
+            <Select
+              value={clusteringMode}
+              onValueChange={(value) =>
+                dataProcessingStore.updateSettings((settings) => ({
+                  ...settings,
+                  clusteringMode:
+                    value as ClusterProcessingSettingsStore["clusteringMode"],
+                }))
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <div className="flex flex-row items-center gap-2">
+                  <SelectValue
+                    placeholder={"Clustering"}
+                    className="justify-start"
+                  />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {Object.entries(clusteringModeOptions).map(([key, label]) => (
+                    <SelectItem value={key} key={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Tabs
+            value={clusterAssignmentOrientation}
+            onValueChange={(value) =>
+              updateSettings((settings) => ({
+                ...settings,
+                clusterAssignmentOrientation: value as Orientation,
+              }))
+            }
+          >
+            <TabsList>
+              {Object.entries(clusterAssignmentOrientationOptions).map(
+                ([key, label]) => (
+                  <TabsTrigger value={key} key={key}>
+                    {label}
+                  </TabsTrigger>
+                )
+              )}
+            </TabsList>
+          </Tabs>
+        </div>
+        {/* <div className="flex flex-row items-center gap-2 space-y-0">
           <Switch
             id="showClusterAssignments-switch"
             checked={showClusterAssignments}
@@ -69,29 +128,55 @@ export const StreamClustersBar = () => {
           <Label htmlFor="showClusterAssignments-switch">
             Cluster assignment
           </Label>
-        </div>
+        </div> */}
 
-        {showClusterAssignments && (
-          <div className="flex flex-row items-end gap-2">
-            <Tabs
-              value={clusterAssignmentOrientation}
-              onValueChange={(value) =>
-                updateSettings((settings) => ({
-                  ...settings,
-                  clusterAssignmentOrientation: value as Orientation,
-                }))
-              }
+        {clusteringMode === "manual" && showClusterAssignments && (
+          <div className="mt-1">
+            <Button
+              size={"sm"}
+              onClick={() => alert("Not implemented yet")}
+              variant={"ghost"}
             >
-              <TabsList>
-                {Object.entries(clusterAssignmentOrientationOptions).map(
-                  ([key, label]) => (
-                    <TabsTrigger value={key} key={key}>
-                      {label}
-                    </TabsTrigger>
-                  )
-                )}
-              </TabsList>
-            </Tabs>
+              <FolderOpenIcon className="mr-2" /> Assign clusters
+            </Button>
+          </div>
+        )}
+        {clusteringMode === "automatic" && showClusterAssignments && (
+          <div className="flex flex-row items-end gap-2">
+            <div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Label className="flex flex-row justify-between items-center gap-1.5">
+                      <span>Similarity Threshold (eps)</span>
+                      <Badge
+                        variant={"secondary"}
+                        className="rounded-full h-4 w-4 text-[12px] m-1"
+                      >
+                        ?
+                      </Badge>
+                    </Label>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Define the threshold of how similar one cluster should be.
+                    The smaller the value, the more clusters you will have.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div>
+                <Input
+                  type="number"
+                  placeholder="Similarity Threshold (eps)"
+                  value={eps}
+                  onChange={({ target }) =>
+                    dataProcessingStore.updateSettings((settings) => ({
+                      ...settings,
+                      eps: target.valueAsNumber,
+                    }))
+                  }
+                />
+              </div>
+            </div>
 
             <div>
               <TooltipProvider>
@@ -113,18 +198,19 @@ export const StreamClustersBar = () => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-
-              <Input
-                type="number"
-                placeholder="Cluster Assignment History Depth"
-                value={clusterAssignmentHistoryDepth}
-                onChange={({ target }) =>
-                  updateSettings((settings) => ({
-                    ...settings,
-                    clusterAssignmentHistoryDepth: target.valueAsNumber,
-                  }))
-                }
-              />
+              <div>
+                <Input
+                  type="number"
+                  placeholder="Cluster Assignment History Depth"
+                  value={clusterAssignmentHistoryDepth}
+                  onChange={({ target }) =>
+                    updateSettings((settings) => ({
+                      ...settings,
+                      clusterAssignmentHistoryDepth: target.valueAsNumber,
+                    }))
+                  }
+                />
+              </div>
             </div>
           </div>
         )}
