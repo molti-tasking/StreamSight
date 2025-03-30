@@ -43,13 +43,12 @@ export default function StreamClustersPage() {
             {/* <ExplorationStuff /> */}
           </div>
           <div className="flex flex-row justify-end gap-2 items-center my-1">
-            <div className="text-muted-foreground text-sm">
-              {dimensions.length} streams / {aggregated.length} clusters
-            </div>
-
             <div className="flex flex-row gap-0.5">
               <AllStreamsDialog />
               {/* <DataProcessingSettingsDialog /> */}
+            </div>
+            <div className="text-muted-foreground text-sm">
+              {dimensions.length} streams / {aggregated.length} clusters
             </div>
           </div>
         </div>
