@@ -404,9 +404,9 @@ const SettingSection = ({
   children: React.ReactNode;
 }) => {
   return (
-    <div className="grid justify-center gap-2 pt-1 px-1">
+    <div className="grid justify-center gap-2 pt-1 px-2">
       <div>{children}</div>
-      <div className="text-gray-500 font-bold text-xs uppercase text-center self-end mx-2">
+      <div className="text-gray-500 font-bold text-xs uppercase text-center self-end mx-1">
         {title}
       </div>
     </div>
