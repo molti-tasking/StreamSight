@@ -1,6 +1,5 @@
 "use server";
 import { DataProcessingSettings } from "../../lib/settings/DataProcessingSettings";
-import { dataWrappingProcess } from "../../lib/wrapping";
 import { clusteringData } from "./clusteringData";
 
 type AggregatedProps = {
@@ -40,7 +39,7 @@ export const aggregator = async (
   // ----------------
   // Clustering data
   // ----------------
-  let aggregated: Record<string, number>[][] = await clusteringData(
+  const aggregated: Record<string, number>[][] = await clusteringData(
     dataToBeClustered,
     dimensions,
     dataProcessingSettings
@@ -49,7 +48,7 @@ export const aggregator = async (
   // ----------------
   // Wrapping of boring data now after we clustered it.
   // ----------------
-  aggregated = await dataWrappingProcess(aggregated, dataProcessingSettings);
+  // aggregated = await dataWrappingProcess(aggregated, dataProcessingSettings);
 
   // ----------------
   // Getting meta data, like all cols and y-domain

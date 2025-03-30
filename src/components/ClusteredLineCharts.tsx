@@ -1,12 +1,11 @@
 import { cn } from "@/lib/utils";
-import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { AlertCircleIcon } from "lucide-react";
 import { memo } from "react";
+import { Chart } from "./Chart";
 import { PlotlyChart } from "./charts/PlotlyChart";
 import { clusterColors } from "./clusterColors";
-import { Chart } from "./Chart";
 
 export const ClusteredLineChartList = () => {
   return (
@@ -47,9 +46,6 @@ const Charts = memo(() => {
   const highlightInfo = useViewModelStore((state) => state.highlightInfo);
   const yDomain = useViewModelStore((state) => state.yDomain);
   const mode = useStreamClustersSettingsStore((state) => state.chartMode);
-  const saveScreenSpace = useClusterProcessingSettingsStore(
-    (state) => "saveScreenSpace" in state && state.saveScreenSpace
-  );
 
   if (mode === "plotly") {
     // From plotly docs: https://plotly.com/python/webgl-vs-svg/
@@ -71,7 +67,6 @@ const Charts = memo(() => {
               className={clusterColors[index % clusterColors.length]}
               yDomain={yDomain}
               mode={mode}
-              saveScreenSpace={saveScreenSpace}
             />
           ))}
           <div className="bg-orange-400 p-4 mt-2 rounded-md flex flex-row items-center gap-4 text-white">
@@ -93,7 +88,6 @@ const Charts = memo(() => {
             className={clusterColors[index % clusterColors.length]}
             yDomain={yDomain}
             mode={mode}
-            saveScreenSpace={saveScreenSpace}
           />
         ))}
       </>

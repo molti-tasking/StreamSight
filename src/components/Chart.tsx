@@ -1,10 +1,9 @@
 "use client";
-import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { PlotlyChart } from "./charts/PlotlyChart";
-import { VegaLiteHighlightedChart } from "./charts/VegaLiteHighlightedChart";
 import { VegaLiteChart } from "./charts/VegaLiteChart";
+import { VegaLiteHighlightedChart } from "./charts/VegaLiteHighlightedChart";
 
 export const Chart = ({
   values,
@@ -23,9 +22,7 @@ export const Chart = ({
 }) => {
   const yDomain = useViewModelStore((state) => state.yDomain);
   const mode = useStreamClustersSettingsStore((state) => state.chartMode);
-  const saveScreenSpace = useClusterProcessingSettingsStore(
-    (state) => "saveScreenSpace" in state && state.saveScreenSpace
-  );
+
   if (mode === "plotly") {
     return (
       <PlotlyChart
@@ -33,7 +30,6 @@ export const Chart = ({
         className={className}
         yDomain={yDomain}
         mode={mode}
-        saveScreenSpace={saveScreenSpace}
       />
     );
   } else if (mode === "highlighted") {
@@ -43,7 +39,6 @@ export const Chart = ({
         yDomain={yDomain}
         className={className}
         mode={mode}
-        saveScreenSpace={saveScreenSpace}
         highlightInfo={highlightInfo}
         chartColor={chartColor}
       />
@@ -56,7 +51,6 @@ export const Chart = ({
       className={className}
       yDomain={yDomain}
       mode={mode}
-      saveScreenSpace={saveScreenSpace}
     />
   );
 };

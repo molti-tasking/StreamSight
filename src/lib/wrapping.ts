@@ -1,9 +1,13 @@
 import { findCommonElements } from "./findCommonElements";
-import { DataProcessingSettings } from "./settings/DataProcessingSettings";
 
 export const dataWrappingProcess = async (
   aggregated: Record<string, number>[][],
-  settings: DataProcessingSettings
+  settings: {
+    meanRange: number;
+    tickRange: number;
+    ignoreBoringDataMode: "standard";
+    saveScreenSpace?: boolean;
+  }
 ) => {
   const { meanRange, tickRange, ignoreBoringDataMode } = settings;
   if (ignoreBoringDataMode === "standard" && !!meanRange && !!tickRange) {
