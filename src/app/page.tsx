@@ -10,7 +10,7 @@ export default function Home() {
           <div className="flex items-center gap-8">
             <div className="bg-primary py-2 px-4 rounded-xs">
               <span className="font-semibold text-xl tracking-tight">
-                Stream Sight
+                StreamSight
               </span>
             </div>
           </div>

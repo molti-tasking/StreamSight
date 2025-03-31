@@ -12,7 +12,7 @@ export default function Navigation() {
           <div className="text-white flex items-center gap-4">
             <Link href={"/"}>
               <span className="font-semibold text-xl tracking-tight">
-                Stream Sight
+                StreamSight
               </span>
             </Link>
             <ExplorationStuff />

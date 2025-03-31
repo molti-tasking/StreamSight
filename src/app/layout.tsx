@@ -1,14 +1,14 @@
+import { Toaster } from "@/components/ui/sonner";
+import { PostHogProvider } from "@/providers/PostHogProvider";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { PostHogProvider } from "@/providers/PostHogProvider";
-import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Stream Sight",
-  description: "Time Series Visualization App",
+  title: "StreamSight",
+  description: "Time Series Monitoring",
 };
 
 export default function RootLayout({

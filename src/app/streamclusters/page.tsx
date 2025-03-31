@@ -37,7 +37,7 @@ export default function StreamClustersPage() {
           <div className="flex items-center gap-8">
             <Link href={"/"} className="bg-primary py-2 px-4 rounded-xs">
               <span className="text-white font-semibold text-xl tracking-tight">
-                Stream Sight
+                StreamSight
               </span>
             </Link>
             {/* <ExplorationStuff /> */}
