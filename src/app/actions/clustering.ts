@@ -46,7 +46,8 @@ export const aggregator = async (
   );
 
   // ----------------
-  // Wrapping of boring data now after we clustered it.
+  // Data wrapping step (currently disabled)
+  // This would filter out "boring" data sections with little variation
   // ----------------
   // aggregated = await dataWrappingProcess(aggregated, dataProcessingSettings);
 

@@ -41,12 +41,10 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     const dimensions = useRawDataStore.getState().dimensions;
     const rawVals = useRawDataStore.getState().values;
     /**
-     * Further down, we we call the aggregator server action, we receive this error:
-     *
-     * "Only plain objects can be passed to Server Functions from the Client. Objects with symbol properties like vega_id are not supported."
-     *
-     * This happens when we open the baseline selection dialog, which somehow immediatly manipulates or data store by adding this weird Symbol to it. In order to get rid of that symbol we create a new object by re-parsing the full data. This is incredible bad for the performance and needs a proper fix.
-     *
+     * When calling the aggregator server action with objects containing symbol properties 
+     * (like vega_id), we receive an error. This occurs when the baseline selection dialog
+     * manipulates the data store. To fix this, we create a clean copy by re-parsing 
+     * the full data to remove any symbols.
      */
 
     // This code checks for "symbol" properties, which cannot be parsed by server actions

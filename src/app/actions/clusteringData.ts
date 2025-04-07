@@ -44,7 +44,7 @@ export const clusteringData = async (
       alert("Somehow we have missing timelines");
     }
 
-    // We have to bring these column grouped clusters now again in the structure that they are grouped by column. This way they are required in order to be displayed properly
+    // Transform column-grouped clusters back to timestamp-grouped format for proper display
     return clusters.map((cluster) => {
       const timestamps = Object.keys(cluster[0][1]);
       const result = [];

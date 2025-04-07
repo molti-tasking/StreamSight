@@ -16,9 +16,6 @@ export const ClusteredLineChartList = () => {
 };
 
 export const ClusteredLineChartGrid = () => {
-  // const ref = useRef<HTMLDivElement>(null);
-  // const { height, width } = useContainerDimensions(ref);
-
   const aggregated = useViewModelStore((state) => state.aggregated);
   const amountOfCharts = aggregated.length;
 
