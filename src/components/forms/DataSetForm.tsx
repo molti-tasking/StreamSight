@@ -130,9 +130,11 @@ export const DataSetForm = () => {
             <div className="flex flex-col gap-4">
               <Card {...getCardProps("peak-simulation", field)}>
                 <CardHeader>
-                  <CardTitle>Peaking Data Simulation</CardTitle>
+                  <CardTitle>Medical Bolus Data Streaming</CardTitle>
                   <CardDescription>
-                    Free configuration of a data stream with random peaks.
+                    Freely configure streams with randomly increasing initial
+                    values and random, simultaneous peaks, simulating blood
+                    oxygenation through regular bolus doses that produce peaks.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

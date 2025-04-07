@@ -17,7 +17,7 @@ export default function Home() {
         </div>
       </div>
       <div className="container max-w-2xl">
-        <h1 className="text-2xl mt-4 mb-2">Choose your preferred dataset</h1>
+        <h1 className="text-2xl mt-4 mb-2">Choose your preferred simulation</h1>
         <DataSetForm />
       </div>
     </div>
