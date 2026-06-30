@@ -20,7 +20,9 @@ const nextConfig: NextConfig = {
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
   /* config options here */
-  productionBrowserSourceMaps: true, // Enables detailed stack traces
+  // Do not ship full source maps to the public production bundle (avoids
+  // leaking original source/structure to anyone via browser dev tools).
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

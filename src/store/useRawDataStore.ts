@@ -1,6 +1,17 @@
 import { DataSet, streamDataSet } from "@/data/streamDataSet";
 import { create } from "zustand";
 
+/**
+ * Upper bound on retained stream rows. Streaming appends a row every tick, so an
+ * unbounded array means O(n) copies and ever-growing memory/cluster cost. This
+ * cap keeps per-tick work flat while still leaving plenty of history for the
+ * cluster-over-time view (which walks the full retained window).
+ */
+const MAX_RETAINED_ROWS = 2000;
+
+const capRows = <T>(rows: T[]): T[] =>
+  rows.length > MAX_RETAINED_ROWS ? rows.slice(-MAX_RETAINED_ROWS) : rows;
+
 interface DataStore {
   mode: "random" | "peaks";
   dimensions: string[];
@@ -31,30 +42,22 @@ export const useRawDataStore = create<DataStore>((set, get) => {
 
       if (intervalId) clearInterval(intervalId);
 
-      console.log("Load dataset: ", dataset);
-
       set({ values: [], dimensions: [] });
-      console.log("Resetted values and dimensions.");
 
       const dataEntries = streamDataSet(dataset);
 
       for await (const dataEntry of dataEntries) {
-        console.log("Yielded next entry of the data timeline: ", dataEntry);
-
         const { values: prevValues, dimensions } = get();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newValues = [...(prevValues as any[]), dataEntry];
-        console.log("New values length: ", newValues.length);
+        const newValues = capRows([...(prevValues as any[]), dataEntry]);
 
         set({ values: newValues });
 
         if (!dimensions.length) {
-          console.log("No dimensions set, set new values here.");
           const newDimensions = Object.keys(dataEntry).filter(
             (col) => col !== "timestamp"
           );
 
-          console.log("New dimensions length: ", newDimensions.length);
           set({ dimensions: newDimensions });
         }
       }
@@ -71,7 +74,6 @@ export const useRawDataStore = create<DataStore>((set, get) => {
       generateData(columnCount, rowCount);
       if (streamingInterval) {
         const newIntervalId = setInterval(() => {
-          console.log("Stream update");
           streamDataUpdate();
         }, streamingInterval);
         set({ intervalId: newIntervalId });
@@ -138,9 +140,9 @@ const streamDataUpdate = () => {
     });
   }
 
-  // Add new row to values
+  // Add new row to values (bounded so the stream array does not grow forever).
   useRawDataStore.setState((state) => ({
-    values: [...state.values, newRow],
+    values: capRows([...state.values, newRow]),
   }));
 };
 

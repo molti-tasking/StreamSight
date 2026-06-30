@@ -1,10 +1,11 @@
-import { cn } from "@/lib/utils";
+import { cn, escapeVegaString } from "@/lib/utils";
 import { VegaLite, type VisualizationSpec } from "react-vega";
 import { clusterColors } from "../clusterColors";
 import { ChartProps } from "./ChartProps";
 import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
 import { UnitSpec } from "vega-lite/build/src/spec";
 import { LegendButton } from "./LegendButton";
+import { useMemo } from "react";
 
 export const VegaLiteHighlightedChart = ({
   values,
@@ -22,12 +23,20 @@ export const VegaLiteHighlightedChart = ({
   chartColor: string;
 }) => {
   const selectedStreams = useStreamSelectionStore((state) => state.values);
-  const dimensions: string[] = values.length
-    ? Object.keys(values[0]).filter((e) => e !== "timestamp")
-    : [];
-  let spec: VisualizationSpec;
+  const dimensions: string[] = useMemo(
+    () =>
+      values.length
+        ? Object.keys(values[0]).filter((e) => e !== "timestamp")
+        : [],
+    [values]
+  );
 
-  if (values?.[0] && Object.keys(values[0]).length === 2) {
+  // This is the heaviest spec in the app and is rebuilt for every cluster on
+  // every streaming tick; memoize on the inputs that actually change.
+  const spec: VisualizationSpec = useMemo(() => {
+    let spec: VisualizationSpec;
+
+    if (values?.[0] && Object.keys(values[0]).length === 2) {
     spec = {
       $schema: "https://vega.github.io/schema/vega-lite/v5.json",
       width: "container",
@@ -150,7 +159,7 @@ export const VegaLiteHighlightedChart = ({
                     ? clusterColors[lastDimension % clusterColors.length]
                     : "gray";
                 return {
-                  test: `datum.variable === '${dimension}'`,
+                  test: `datum.variable === '${escapeVegaString(dimension)}'`,
                   value: clusterColor, // Use the color property from highlightInfo
                 };
               }),
@@ -158,7 +167,7 @@ export const VegaLiteHighlightedChart = ({
 
             opacity: {
               condition: highlightInfo?.map(({ dimension, opacity }) => ({
-                test: `datum.variable === '${dimension}'`,
+                test: `datum.variable === '${escapeVegaString(dimension)}'`,
                 value: dimensions.length < 3 ? 1.0 : opacity,
               })),
               value: 0.3,
@@ -230,46 +239,60 @@ export const VegaLiteHighlightedChart = ({
           ],
         },
 
-        ...selectedStreams?.flatMap((value) => [
-          {
-            mark: "line",
-            encoding: {
-              y: { field: "value", type: "quantitative" },
-              color: {
-                field: "variable",
-                type: "nominal",
-                legend: null,
-                condition: {
-                  test: `datum.variable === '${value}'`,
-                  value: "black",
+        ...selectedStreams?.flatMap((value) => {
+          const safeValue = escapeVegaString(value);
+          return [
+            {
+              mark: "line",
+              encoding: {
+                y: { field: "value", type: "quantitative" },
+                color: {
+                  field: "variable",
+                  type: "nominal",
+                  legend: null,
+                  condition: {
+                    test: `datum.variable === '${safeValue}'`,
+                    value: "black",
+                  },
+                },
+                opacity: {
+                  condition: {
+                    test: `datum.variable === '${safeValue}'`,
+                    value: 1,
+                  },
+                  value: 0,
                 },
               },
-              opacity: {
-                condition: {
-                  test: `datum.variable === '${value}'`,
-                  value: 1,
+            } as UnitSpec<"line">,
+            {
+              mark: { type: "text", align: "right", dy: -5 },
+              encoding: {
+                x: { field: "timestamp", type: "temporal", aggregate: "max" },
+                y: {
+                  field: "value",
+                  type: "quantitative",
+                  aggregate: "max",
                 },
-                value: 0,
+                text: { value },
               },
-            },
-          } as UnitSpec<"line">,
-          {
-            mark: { type: "text", align: "right", dy: -5 },
-            encoding: {
-              x: { field: "timestamp", type: "temporal", aggregate: "max" },
-              y: {
-                field: "value",
-                type: "quantitative",
-                aggregate: "max",
-              },
-              text: { value },
-            },
-            transform: [{ filter: `datum.variable === '${value}'` }],
-          } as UnitSpec<"text">,
-        ]),
+              transform: [{ filter: `datum.variable === '${safeValue}'` }],
+            } as UnitSpec<"text">,
+          ];
+        }),
       ],
-    };
-  }
+      };
+    }
+    return spec;
+  }, [
+    values,
+    dimensions,
+    chartColor,
+    yDomain,
+    saveScreenSpace,
+    highlightInfo,
+    selectedStreams,
+  ]);
+
   return (
     <div className={"flex-1 rounded-sm min-h-20 h-full relative"}>
       <LegendButton dimensions={dimensions}>

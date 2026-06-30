@@ -29,7 +29,14 @@ export const BaselineChart = () => {
 
   const spec: VisualizationSpec = {
     $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-    data: { values },
+    data: {
+      values: [
+        { x: 1, y: 2 }, // per Publication extracted data
+        { x: 1, y: 2 }, // per Publication extracted data
+        { x: 1, y: 2 }, // per Publication extracted data
+        { x: 1, y: 2 }, // per Publication extracted data
+      ],
+    },
     width: "container",
     height: "container",
     background: "transparent",

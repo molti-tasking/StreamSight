@@ -1,14 +1,12 @@
-import {
-  clusteringOverTime,
-  ClusterView,
-} from "@/app/actions/clusteringOverTime";
 import _ from "lodash";
 import { create } from "zustand";
 import { useClusterProcessingSettingsStore } from "./ClusterProcessingSettingsStore";
 import { useRawDataStore } from "./useRawDataStore";
 import { useStreamClustersSettingsStore } from "./useStreamClustersSettingsStore";
-import { highlighter } from "@/app/actions/highlighting";
-import { aggregator } from "@/app/actions/clustering";
+import { highlighter } from "@/lib/clustering/highlighting";
+import { getClusteringClient } from "@/lib/clustering/clusteringClient";
+import { ClusterView } from "@/lib/clustering/clusterTypes";
+import { dataWrappingProcess } from "@/lib/wrapping";
 import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
 
 interface DataStore {
@@ -35,8 +33,6 @@ interface DataStore {
 }
 
 export const useViewModelStore = create<DataStore>((set, get) => {
-  console.log("init view model store");
-
   const throttledDataProcess = _.throttle(
     async () => {
       const dimensions = useRawDataStore.getState().dimensions;
@@ -62,14 +58,23 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         tickRange,
         saveScreenSpace,
       };
-      console.log("Clustering with: ", dataProcessingSettings.eps);
-      const aggregated = await aggregator(
-        values,
-        dimensions,
+      const clustered = await getClusteringClient().aggregator(values, dimensions, {
+        eps: dataProcessingSettings.eps,
+        dataTicks: dataProcessingSettings.dataTicks,
+      });
+
+      // "Boring data" compression stays in JS and is applied to the clustered
+      // WASM output (it operates on already-clustered data).
+      const wrappedAggregated = await dataWrappingProcess(
+        clustered.aggregated,
         dataProcessingSettings
       );
+      const aggregated = {
+        aggregated: wrappedAggregated,
+        yDomain: clustered.yDomain,
+        clusterAssignment: clustered.clusterAssignment,
+      };
 
-      console.log("Found amount of clusters: ", aggregated.aggregated.length);
       const lastTimestamp =
         values?.[values.length - 1]?.["timestamp"] ?? Date.now();
       const clusterAssignment: [string, number][] =
@@ -138,10 +143,10 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         saveScreenSpace,
       };
 
-      const { clustersInTime } = await clusteringOverTime(
+      const { clustersInTime } = await getClusteringClient().clusteringOverTime(
         values,
         dimensions,
-        dataProcessingSettings
+        { eps: dataProcessingSettings.eps, dataTicks: dataProcessingSettings.dataTicks }
       );
 
       console.timeEnd(

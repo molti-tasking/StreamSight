@@ -134,7 +134,6 @@ export const wrapper = (
   dimensions: string[],
   settings: DataCompressionPreferences
 ) => {
-  console.count("Called wrapper");
   const totalTickRange = Math.floor(settings.tickRange) ?? 3;
   const ticksBefore = Math.floor((totalTickRange - 1) / 2);
   const ticksAfter = totalTickRange - ticksBefore;

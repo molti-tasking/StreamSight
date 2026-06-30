@@ -3,27 +3,35 @@ import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSett
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { timeFormat } from "d3";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { clusterColors } from "./clusterColors";
 
 export const AggregatedClusterView = () => {
   const values = useRawDataStore((state) => state.values);
   const dimensions = useRawDataStore((state) => state.dimensions);
 
+  // Subscribe with selectors so this view only re-renders on the inputs it
+  // actually uses, instead of on every unrelated store change.
   const presentationSettings = useClusterProcessingSettingsStore();
-
-  const { clustersInTime, processClustersInTimeData } = useViewModelStore();
+  const clustersInTime = useViewModelStore((state) => state.clustersInTime);
+  const processClustersInTimeData = useViewModelStore(
+    (state) => state.processClustersInTimeData
+  );
 
   useEffect(() => {
     processClustersInTimeData();
-  }, [presentationSettings, values]);
-  const interestingTimestampIndizes = [
-    0,
-    Math.floor(clustersInTime.length / 4),
-    Math.floor(clustersInTime.length / 2),
-    Math.floor((clustersInTime.length * 3) / 4),
-    clustersInTime.length - 1,
-  ];
+  }, [presentationSettings, values, processClustersInTimeData]);
+
+  const interestingTimestampIndizes = useMemo(
+    () => [
+      0,
+      Math.floor(clustersInTime.length / 4),
+      Math.floor(clustersInTime.length / 2),
+      Math.floor((clustersInTime.length * 3) / 4),
+      clustersInTime.length - 1,
+    ],
+    [clustersInTime.length]
+  );
 
   return (
     <div className="flex flex-1 flex-row w-full my-2 pb-6 relative">

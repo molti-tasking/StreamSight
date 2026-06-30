@@ -24,11 +24,11 @@ export const LegendButton = ({
   return (
     <HoverCard>
       <HoverCardTrigger asChild>
-        <div className="absolut top-0 bottom-0 left-0 right-0 cursor-help z-50 w-full h-full">
+        <div className="absolute top-0 bottom-0 left-0 right-0 cursor-help z-50 w-full h-full">
           {children}
         </div>
       </HoverCardTrigger>
-      <HoverCardContent className="w-80 lg:w-2xl xl:w-4xl">
+      <HoverCardContent className="w-80 lg:w-2xl xl:w-4xl absolute top-0 bottom-0 left-0 right-0">
         <h4 className="font-medium mb-2">Streams</h4>
         <p className="flex flex-row gap-1 flex-wrap">
           {dimensions.map((dim) => (

@@ -2,6 +2,7 @@ import { cn, deepMerge } from "@/lib/utils";
 import { VegaLite, type VisualizationSpec } from "react-vega";
 import { ChartProps } from "./ChartProps";
 import { LegendButton } from "./LegendButton";
+import { useMemo } from "react";
 
 const chartModeSpecs: Record<
   "multiline" | "envelope",
@@ -111,54 +112,63 @@ export const VegaLiteChart = ({
   saveScreenSpace,
   mode,
 }: ChartProps) => {
-  const dimensions = values.length
-    ? Object.keys(values[0]).filter((e) => e !== "timestamp")
-    : [];
-  const dataSpec: Partial<VisualizationSpec> = {
-    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
-    width: "container",
-    height: "container",
-    background: "transparent",
-
-    padding: 0,
-    // Try to ensure it resizes to fill container space without extra padding
-    autosize: {
-      type: "fit",
-      contains: "padding",
-    },
-
-    data: { values },
-    transform: [{ fold: dimensions, as: ["variable", "value"] }],
-
-    mark: "line",
-    encoding: {
-      x: {
-        field: "timestamp",
-        type: !!saveScreenSpace ? "ordinal" : "temporal",
-        axis: !!saveScreenSpace ? { labelExpr: "" } : {},
-        title: null,
-      },
-      y: {
-        field: "value",
-        type: "quantitative",
-        scale: { domain: yDomain },
-        title: null,
-        axis: {
-          labelPadding: -20,
-          labelOpacity: 0.5,
-          ticks: false,
-          domain: false,
-        },
-      },
-      color: { legend: null },
-    },
-  };
-
-  // I don't 100% know why, but as of now it was very important to keep this order of the specs how they are getting passed into the merge function. Otherwise, the vizualisation breaks.
-  const spec = deepMerge(
-    dataSpec,
-    chartModeSpecs[mode as "multiline" | "envelope"]
+  const dimensions = useMemo(
+    () =>
+      values.length
+        ? Object.keys(values[0]).filter((e) => e !== "timestamp")
+        : [],
+    [values]
   );
+
+  // Rebuilding + deep-merging the spec on every render is expensive with 30+
+  // live charts; memoize on the inputs that change.
+  const spec = useMemo(() => {
+    const dataSpec: Partial<VisualizationSpec> = {
+      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      width: "container",
+      height: "container",
+      background: "transparent",
+
+      padding: 0,
+      // Try to ensure it resizes to fill container space without extra padding
+      autosize: {
+        type: "fit",
+        contains: "padding",
+      },
+
+      data: { values },
+      transform: [{ fold: dimensions, as: ["variable", "value"] }],
+
+      mark: "line",
+      encoding: {
+        x: {
+          field: "timestamp",
+          type: !!saveScreenSpace ? "ordinal" : "temporal",
+          axis: !!saveScreenSpace ? { labelExpr: "" } : {},
+          title: null,
+        },
+        y: {
+          field: "value",
+          type: "quantitative",
+          scale: { domain: yDomain },
+          title: null,
+          axis: {
+            labelPadding: -20,
+            labelOpacity: 0.5,
+            ticks: false,
+            domain: false,
+          },
+        },
+        color: { legend: null },
+      },
+    };
+
+    // I don't 100% know why, but as of now it was very important to keep this order of the specs how they are getting passed into the merge function. Otherwise, the vizualisation breaks.
+    return deepMerge(
+      dataSpec,
+      chartModeSpecs[mode as "multiline" | "envelope"]
+    );
+  }, [values, dimensions, saveScreenSpace, yDomain, mode]);
 
   return (
     <div

@@ -1,107 +1,101 @@
-mod clustering; // Include the file as a module
-use clustering::clustering_data; // Import the function
-use wasm_bindgen::prelude::*;
+mod clustering;
+use clustering::{clustering_data, ChartPresentationSettings};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use wasm_bindgen::prelude::*;
 
- 
-// Struct to represent the AggregatedProps
-#[wasm_bindgen]
+/// Mirror of the JS `AggregatedProps` shape returned to the client. Field names
+/// are renamed to the camelCase the JS consumer expects.
 #[derive(Serialize, Deserialize)]
 pub struct AggregatedProps {
-    aggregated: Vec<Vec<HashMap<String, f64>>>,
-    y_domain: (f64, f64),
-    cluster_assignment: Vec<(String, usize)>,
+    pub aggregated: Vec<Vec<HashMap<String, f64>>>,
+    #[serde(rename = "yDomain")]
+    pub y_domain: (f64, f64),
+    #[serde(rename = "clusterAssignment")]
+    pub cluster_assignment: Vec<(String, i64)>,
 }
 
-// Export the aggregator function to JavaScript
+/// WASM entry point. Faithful port of `aggregator` in
+/// `src/app/actions/clustering.ts`. Inputs/outputs are plain JS values.
 #[wasm_bindgen]
 pub fn aggregator(
     raw_data: JsValue,
     dimensions: JsValue,
     settings: JsValue,
 ) -> Result<JsValue, JsValue> {
-    // Deserialize inputs from JSValue
-    let raw_data: Vec<HashMap<String, f64>> = raw_data.into_serde().map_err(|e| e.to_string())?;
-    let dimensions: Vec<String> = dimensions.into_serde().map_err(|e| e.to_string())?;
-    let settings: ChartPresentationSettings = settings.into_serde().map_err(|e| e.to_string())?;
+    console_error_panic_hook::set_once();
 
-    // Call the Rust aggregator function
-    let aggregated_props = aggregator_internal(raw_data, dimensions, &settings);
+    let raw_data: Vec<HashMap<String, f64>> = serde_wasm_bindgen::from_value(raw_data)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let dimensions: Vec<String> = serde_wasm_bindgen::from_value(dimensions)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let settings: ChartPresentationSettings = serde_wasm_bindgen::from_value(settings)
+        .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
-    // Serialize the result back to JsValue
-    JsValue::from_serde(&aggregated_props).map_err(|e| e.to_string().into())
+    let result = aggregator_internal(&raw_data, &dimensions, &settings);
+
+    // Serialize HashMaps as plain JS objects (not Maps) to match the JS contract.
+    let serializer =
+        serde_wasm_bindgen::Serializer::new().serialize_maps_as_objects(true);
+    result
+        .serialize(&serializer)
+        .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-// Internal Rust function for aggregation logic
 fn aggregator_internal(
-    raw_data: Vec<HashMap<String, f64>>,
-    dimensions: Vec<String>,   
-    data_ticks: usize,
-    eps: Option<f64>,           // DBSCAN epsilon
-    cluster_count: Option<usize>, // Clustering by count
+    raw_data: &[HashMap<String, f64>],
+    dimensions: &[String],
+    settings: &ChartPresentationSettings,
 ) -> AggregatedProps {
-    // Filtering data to time
-    let data_to_be_clustered = if let Some(data_ticks) = data_ticks {
-        if data_ticks < raw_data.len() {
-            raw_data[raw_data.len() - data_ticks..].to_vec()
-        } else {
-            raw_data.clone()
+    // Filter to the most recent `dataTicks` entries (clustering.ts:30-32).
+    let data_to_be_clustered: Vec<HashMap<String, f64>> = match settings.data_ticks {
+        Some(ticks) if ticks < raw_data.len() => {
+            raw_data[raw_data.len() - ticks..].to_vec()
         }
-    } else {
-        raw_data.clone()
+        _ => raw_data.to_vec(),
     };
 
-    // Clustering data
-    let mut aggregated = clustering_data(data_to_be_clustered, dimensions, data_ticks, eps, cluster_count);
+    // Cluster (boring-data wrapping stays in JS, applied to this output).
+    let aggregated = clustering_data(&data_to_be_clustered, dimensions, settings);
 
-    // Wrapping of boring data now after we clustered it
-    aggregated = data_wrapping_process(aggregated, settings);
-
-    // Getting metadata
-    let cluster_assignment: Vec<(String, usize)> = dimensions
+    // Cluster assignment: index of the cluster each dimension landed in, or -1.
+    let cluster_assignment: Vec<(String, i64)> = dimensions
         .iter()
         .map(|val| {
-            (
-                val.clone(),
-                aggregated
-                    .iter()
-                    .position(|entries| entries[0].contains_key(val))
-                    .unwrap_or(usize::MAX),
-            )
-        })
-        .collect();
-
-    // Calculate the shared y-axis domain across all clusters
-    let all_values: Vec<f64> = data_to_be_clustered
-        .iter()
-        .flat_map(|entries| {
-            entries
+            let idx = aggregated
                 .iter()
-                .filter_map(|(key, value)| {
-                    if key == "timestamp" {
-                        None
-                    } else {
-                        Some(*value)
-                    }
+                .position(|entries| {
+                    entries
+                        .first()
+                        .map(|e| e.contains_key(val))
+                        .unwrap_or(false)
                 })
+                .map(|p| p as i64)
+                .unwrap_or(-1);
+            (val.clone(), idx)
         })
         .collect();
 
-    let y_min = all_values.iter().cloned().fold(f64::INFINITY, f64::min);
-    let y_max = all_values.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    // Shared y-axis domain across all (non-timestamp) values in the window.
+    let mut y_min = f64::INFINITY;
+    let mut y_max = f64::NEG_INFINITY;
+    for entry in &data_to_be_clustered {
+        for (key, value) in entry {
+            if key == "timestamp" {
+                continue;
+            }
+            if *value < y_min {
+                y_min = *value;
+            }
+            if *value > y_max {
+                y_max = *value;
+            }
+        }
+    }
 
     AggregatedProps {
         aggregated,
         y_domain: (y_min, y_max),
         cluster_assignment,
     }
-}
-
- 
-fn data_wrapping_process(
-    data: Vec<Vec<HashMap<String, f64>>>,
-    _settings: &ChartPresentationSettings,
-) -> Vec<Vec<HashMap<String, f64>>> {
-    data // Replace with actual logic
 }
