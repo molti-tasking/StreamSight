@@ -1,5 +1,17 @@
 import { type ClassValue } from "clsx";
 
+/** Color used for the DBSCAN noise / outlier cluster (id -1). */
+export const OUTLIER_COLOR = "#9CA3AF"; // gray-400
+
+/**
+ * Resolve a stable cluster id to a color. Outliers (id -1) render gray; all
+ * other ids cycle through the palette so colors stay distinct and stable.
+ */
+export function colorForClusterId(id: number): string {
+  if (id < 0) return OUTLIER_COLOR;
+  return clusterColors[id % clusterColors.length];
+}
+
 export const clusterColorClass: ClassValue[] = [
   "bg-red-200",
   "bg-green-200",

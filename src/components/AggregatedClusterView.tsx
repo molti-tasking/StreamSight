@@ -1,10 +1,11 @@
 import { cn } from "@/lib/utils";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useRawDataStore } from "@/store/useRawDataStore";
+import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { timeFormat } from "d3";
 import { useEffect, useMemo } from "react";
-import { clusterColors } from "./clusterColors";
+import { colorForClusterId } from "./clusterColors";
 
 export const AggregatedClusterView = () => {
   const values = useRawDataStore((state) => state.values);
@@ -13,6 +14,9 @@ export const AggregatedClusterView = () => {
   // Subscribe with selectors so this view only re-renders on the inputs it
   // actually uses, instead of on every unrelated store change.
   const presentationSettings = useClusterProcessingSettingsStore();
+  const animate = useStreamClustersSettingsStore(
+    (state) => state.animateTransitions
+  );
   const clustersInTime = useViewModelStore((state) => state.clustersInTime);
   const processClustersInTimeData = useViewModelStore(
     (state) => state.processClustersInTimeData
@@ -67,9 +71,10 @@ export const AggregatedClusterView = () => {
             {clusters.map(([name, styleGroup], clusterIndex) => (
               <div
                 key={`${groupIndex}-${clusterIndex}-${name}`}
+                style={{ background: colorForClusterId(styleGroup) }}
                 className={cn(
-                  clusterColors[styleGroup % clusterColors.length],
                   "flex-1 min-w-1 w-full",
+                  animate && "transition-colors duration-700",
                   clusterIndex > 0 ? "border-t-[0.5px] border-green" : ""
                 )}
               ></div>

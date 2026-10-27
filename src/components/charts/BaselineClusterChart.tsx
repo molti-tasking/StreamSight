@@ -1,14 +1,19 @@
 import { cn } from "@/lib/utils";
+import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { VegaLite, VisualizationSpec } from "react-vega";
-import { clusterColors } from "../clusterColors";
+import { colorForClusterId } from "../clusterColors";
 import { useMemo } from "react";
 
 export const BaselineClusterChart = () => {
   const clusters = useViewModelStore((state) => state.aggregated);
+  const clusterIds = useViewModelStore((state) => state.clusterIds);
+  const baselineTolerance = useClusterProcessingSettingsStore(
+    (state) => state.baselineTolerance ?? 0
+  );
 
-  const values: { group: string; value: number }[] = useMemo(() => {
-    const arr: { group: string; value: number }[] = [];
+  const values: { group: string; value: number; breach: boolean }[] = useMemo(() => {
+    const arr: { group: string; value: number; breach: boolean }[] = [];
     clusters.forEach((cluster, index) => {
       const group = `Cluster ${index}`;
       const dimensions = Object.keys(cluster[0]).filter(
@@ -16,12 +21,15 @@ export const BaselineClusterChart = () => {
       );
       const baseline = cluster[0];
       const dataSet = cluster[cluster.length - 1];
-      dimensions.forEach((dimension) =>
-        arr.push({ group, value: dataSet[dimension] - baseline[dimension] })
-      );
+      dimensions.forEach((dimension) => {
+        const value = dataSet[dimension] - baseline[dimension];
+        const breach =
+          baselineTolerance > 0 && Math.abs(value) > baselineTolerance;
+        arr.push({ group, value, breach });
+      });
     });
     return arr;
-  }, [clusters]);
+  }, [clusters, baselineTolerance]);
 
   const spec: VisualizationSpec = useMemo(
     () => ({
@@ -42,7 +50,11 @@ export const BaselineClusterChart = () => {
               type: "nominal",
               scale: {
                 domain: clusters.map((_, index) => `Cluster ${index}`),
-                range: clusterColors,
+                // Per-cluster color keyed by stable id so colors persist as
+                // cluster order changes between ticks.
+                range: clusters.map((_, index) =>
+                  colorForClusterId(clusterIds[index] ?? index)
+                ),
               },
               legend: null,
             },
@@ -54,9 +66,51 @@ export const BaselineClusterChart = () => {
             y: { datum: 0, type: "quantitative" },
           },
         },
+        // Tolerance band: dashed red rules at ±tolerance, plus red points for
+        // streams whose deviation from baseline breaches it.
+        ...(baselineTolerance > 0
+          ? [
+              {
+                mark: {
+                  type: "rule" as const,
+                  color: "#DC2626",
+                  strokeDash: [4, 2],
+                },
+                encoding: {
+                  y: { datum: baselineTolerance, type: "quantitative" as const },
+                },
+              },
+              {
+                mark: {
+                  type: "rule" as const,
+                  color: "#DC2626",
+                  strokeDash: [4, 2],
+                },
+                encoding: {
+                  y: {
+                    datum: -baselineTolerance,
+                    type: "quantitative" as const,
+                  },
+                },
+              },
+              {
+                transform: [{ filter: "datum.breach" }],
+                mark: {
+                  type: "point" as const,
+                  color: "#DC2626",
+                  filled: true,
+                  size: 40,
+                },
+                encoding: {
+                  x: { field: "group", type: "nominal" as const },
+                  y: { field: "value", type: "quantitative" as const },
+                },
+              },
+            ]
+          : []),
       ],
     }),
-    [values, clusters]
+    [values, clusters, clusterIds, baselineTolerance]
   );
 
   return (

@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -13,7 +14,10 @@ import {
   layoutViewOptions,
   StreamClustersSettings,
 } from "@/lib/settings/StreamClustersSettings";
+import { clusterOrderOptions } from "@/lib/clustering/orderClusters";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
+import { useManualAssignmentStore } from "@/store/useManualAssignmentStore";
+import { useViewModelStore } from "@/store/useViewModelStore";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "../ui/input";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
@@ -30,6 +34,7 @@ type LayoutMode = StreamClustersSettings["layoutMode"];
 // type TreemapMode = StreamClustersSettings["treemapSignificanceMode"];
 type Orientation = StreamClustersSettings["clusterAssignmentOrientation"];
 type Chart = StreamClustersSettings["chartMode"];
+type OrderMode = StreamClustersSettings["clusterOrderMode"];
 
 export const StreamClustersBar = () => {
   const {
@@ -40,9 +45,20 @@ export const StreamClustersBar = () => {
     clusterAssignmentOrientation,
     showClusterAssignments,
     chartMode,
+    clusterOrderMode,
+    animateTransitions,
     showStreamLabel,
     showClusterLegend,
   } = useStreamClustersSettingsStore();
+
+  const locked = useManualAssignmentStore((s) => s.locked);
+  const pinCount = useManualAssignmentStore(
+    (s) => Object.keys(s.pins).length
+  );
+  const lockCurrent = useManualAssignmentStore((s) => s.lockCurrent);
+  const unlock = useManualAssignmentStore((s) => s.unlock);
+  const clusterAssignment = useViewModelStore((s) => s.clusterAssignment);
+  const anomalies = useViewModelStore((s) => s.anomalies);
 
   return (
     <div className="flex flex-row">
@@ -128,6 +144,45 @@ export const StreamClustersBar = () => {
           <Label htmlFor="showClusterAssignments-switch">
             Cluster assignment
           </Label>
+        </div>
+
+        <div className="flex flex-row items-center gap-2 space-y-0 mt-2">
+          <Switch
+            id="lockAssignments-switch"
+            checked={locked}
+            onCheckedChange={(value) =>
+              value ? lockCurrent(clusterAssignment) : unlock()
+            }
+          />
+          <Label htmlFor="lockAssignments-switch">
+            Static grouping{locked && pinCount ? ` (${pinCount})` : ""}
+          </Label>
+        </div>
+
+        <div className="mt-2">
+          <Label>Order by</Label>
+          <Select
+            value={clusterOrderMode}
+            onValueChange={(value) =>
+              updateSettings((settings) => ({
+                ...settings,
+                clusterOrderMode: value as OrderMode,
+              }))
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Order" className="justify-start" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {Object.entries(clusterOrderOptions).map(([key, label]) => (
+                  <SelectItem value={key} key={key}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
 
         {showClusterAssignments && (
@@ -220,6 +275,20 @@ export const StreamClustersBar = () => {
             </SelectGroup>
           </SelectContent>
         </Select>
+
+        <div className="flex flex-row items-center gap-2 mt-2">
+          <Switch
+            id="animateTransitions-switch"
+            checked={animateTransitions}
+            onCheckedChange={(value) =>
+              updateSettings((settings) => ({
+                ...settings,
+                animateTransitions: value,
+              }))
+            }
+          />
+          <Label htmlFor="animateTransitions-switch">Animate changes</Label>
+        </div>
       </SettingSection>
 
       <Separator orientation="vertical" className="mx-4" />
@@ -258,8 +327,30 @@ export const StreamClustersBar = () => {
 
       <Separator orientation="vertical" className="mx-4" />
 
-      <SettingSection title="Animation">
-        <p>TBD</p>
+      <SettingSection title="Anomalies">
+        <div className="w-[200px] max-h-24 overflow-auto text-xs">
+          {anomalies.length === 0 ? (
+            <p className="text-gray-400">No anomalies detected</p>
+          ) : (
+            <ul className="space-y-0.5">
+              <li className="font-semibold">
+                {anomalies.length} detected
+              </li>
+              {anomalies.slice(0, 6).map((a, i) => (
+                <li
+                  key={`${a.dimension}-${a.timestamp}-${i}`}
+                  className={cn(
+                    a.type === "spike" && "text-red-600",
+                    a.type === "drop" && "text-blue-600",
+                    a.type === "regime-change" && "text-purple-600"
+                  )}
+                >
+                  {a.label}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </SettingSection>
     </div>
   );

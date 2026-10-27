@@ -1,9 +1,15 @@
 import { cn } from "@/lib/utils";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
+import { useManualAssignmentStore } from "@/store/useManualAssignmentStore";
 import { useState } from "react";
-import { clusterColors } from "./clusterColors";
+import { colorForClusterId } from "./clusterColors";
 import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "./ui/popover";
 
 export const ClusterLegend = () => {
   const clusterAssignment = useViewModelStore(
@@ -35,7 +41,7 @@ export const ClusterLegend = () => {
           )}
           key={"single-legend-bar"}
         >
-          <LegendBar entries={clusterAssignment} />
+          <LegendBar entries={clusterAssignment} pinnable />
         </div>
       )}
     </div>
@@ -86,11 +92,20 @@ const HistoryBars = () => {
   );
 };
 
-const LegendBar = ({ entries }: { entries: [string, number][] }) => {
+const LegendBar = ({
+  entries,
+  pinnable = false,
+}: {
+  entries: [string, number][];
+  pinnable?: boolean;
+}) => {
   const remove = useStreamSelectionStore((state) => state.remove);
   const add = useStreamSelectionStore((state) => state.add);
   const clusterAssignmentOrientation = useStreamClustersSettingsStore(
     (store) => store.clusterAssignmentOrientation
+  );
+  const animate = useStreamClustersSettingsStore(
+    (store) => store.animateTransitions
   );
 
   return (
@@ -102,26 +117,111 @@ const LegendBar = ({ entries }: { entries: [string, number][] }) => {
           : "flex-col h-full"
       )}
     >
-      {entries.map(([name, styleGroup], index) => (
-        <div
-          key={`${name}-${index}`}
-          onMouseEnter={() => add(name)}
-          onMouseLeave={() => remove(name)}
-          className={cn(
-            "flex-1",
-            clusterAssignmentOrientation === "horizontal" ? "h-4" : "w-4",
-            index > 0 && clusterAssignmentOrientation === "horizontal"
-              ? "border-l-[0.5px]"
-              : "",
-            index > 0 && clusterAssignmentOrientation === "vertical"
-              ? "border-t-[0.5px]"
-              : ""
-          )}
-          style={{
-            background: clusterColors[styleGroup % clusterColors.length],
-          }}
-        ></div>
-      ))}
+      {entries.map(([name, styleGroup], index) => {
+        const cell = (
+          <div
+            onMouseEnter={() => add(name)}
+            onMouseLeave={() => remove(name)}
+            className={cn(
+              "flex-1",
+              animate && "transition-colors duration-700",
+              clusterAssignmentOrientation === "horizontal" ? "h-4" : "w-4",
+              index > 0 && clusterAssignmentOrientation === "horizontal"
+                ? "border-l-[0.5px]"
+                : "",
+              index > 0 && clusterAssignmentOrientation === "vertical"
+                ? "border-t-[0.5px]"
+                : ""
+            )}
+            style={{
+              background: colorForClusterId(styleGroup),
+            }}
+          ></div>
+        );
+
+        if (!pinnable) return <div key={`${name}-${index}`}>{cell}</div>;
+
+        return (
+          <StreamPinCell
+            key={`${name}-${index}`}
+            name={name}
+            currentCluster={styleGroup}
+          >
+            {cell}
+          </StreamPinCell>
+        );
+      })}
     </div>
+  );
+};
+
+/**
+ * Wraps a legend cell in a popover that lets the user pin the stream to a
+ * specific cluster (manual / static assignment) or release it back to automatic
+ * clustering.
+ */
+const StreamPinCell = ({
+  name,
+  currentCluster,
+  children,
+}: {
+  name: string;
+  currentCluster: number;
+  children: React.ReactNode;
+}) => {
+  const clusterIds = useViewModelStore((s) => s.clusterIds);
+  const pins = useManualAssignmentStore((s) => s.pins);
+  const pin = useManualAssignmentStore((s) => s.pin);
+  const unpin = useManualAssignmentStore((s) => s.unpin);
+
+  const targets = Array.from(new Set(clusterIds)).sort((a, b) => a - b);
+  const isPinned = name in pins;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <div
+          className="flex-1 flex"
+          onClick={(e) => e.stopPropagation()}
+          title={`${name}${isPinned ? " (pinned)" : ""}`}
+        >
+          {children}
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-56"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-xs font-semibold mb-2">
+          Assign “{name}” to cluster
+        </div>
+        <div className="flex flex-row flex-wrap gap-1 mb-2">
+          {targets.map((id) => (
+            <button
+              key={id}
+              onClick={() => pin(name, id)}
+              className={cn(
+                "h-6 w-6 rounded-sm border",
+                id === currentCluster ? "ring-2 ring-black" : ""
+              )}
+              style={{
+                background: colorForClusterId(id),
+              }}
+              title={id < 0 ? "Outliers" : `Cluster ${id}`}
+            />
+          ))}
+        </div>
+        <button
+          onClick={() => unpin(name)}
+          disabled={!isPinned}
+          className={cn(
+            "text-xs underline",
+            isPinned ? "text-blue-600" : "text-gray-400 cursor-default"
+          )}
+        >
+          Release to automatic clustering
+        </button>
+      </PopoverContent>
+    </Popover>
   );
 };

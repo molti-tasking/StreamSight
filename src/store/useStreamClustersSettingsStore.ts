@@ -12,6 +12,8 @@ export const useStreamClustersSettingsStore =
     return {
       layoutMode: "grid",
       treemapSignificanceMode: "clusterSize",
+      clusterOrderMode: "stable",
+      animateTransitions: true,
       chartMode: "highlighted",
       showClusterAssignments: true,
       clusterAssignmentHistoryDepth: 5,

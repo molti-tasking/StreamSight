@@ -7,6 +7,8 @@ export const streamClustersSettingsSchema = z.object({
   clusterAssignmentHistoryDepth: z.coerce.number(),
   clusterAssignmentOrientation: z.enum(["vertical", "horizontal"]),
   treemapSignificanceMode: z.enum(["clusterSize", "clusterVariance"]),
+  clusterOrderMode: z.enum(["stable", "size", "variance", "churn"]),
+  animateTransitions: z.coerce.boolean(),
   chartMode: z.enum(["highlighted", "multiline", "envelope", "plotly"]),
   showStreamLabel: z.coerce.boolean(),
   showClusterLegend: z.coerce.boolean(),

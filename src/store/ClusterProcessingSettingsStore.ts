@@ -13,7 +13,9 @@ export const useClusterProcessingSettingsStore =
     const dataTicks = Math.min(useRawDataStore.getState().values.length, 50);
     return {
       eps: 80,
+      minPts: 0,
       dataTicks,
+      baselineTolerance: 0,
       ignoreBoringDataMode: "off",
 
       updateSettings: (newSettings) => {

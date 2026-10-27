@@ -1,4 +1,4 @@
-import { clusterColors } from "@/components/clusterColors";
+import { colorForClusterId } from "@/components/clusterColors";
 import { useContainerDimensions } from "@/components/useContainerDimensions";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useRawDataStore } from "@/store/useRawDataStore";
@@ -9,6 +9,7 @@ import { TreemapCharts } from "./TreemapCharts";
 
 export function TreemapLayout() {
   const aggregated = useViewModelStore((data) => data.aggregated);
+  const clusterIds = useViewModelStore((state) => state.clusterIds);
   const highlightInfo = useViewModelStore((state) => state.highlightInfo);
 
   const ref = useRef<HTMLDivElement>(null);
@@ -56,7 +57,7 @@ export function TreemapLayout() {
                   key={index}
                   className={"w-full h-full overflow-hidden"}
                   highlightInfo={highlightInfo?.[index]}
-                  chartColor={clusterColors[index % clusterColors.length]}
+                  chartColor={colorForClusterId(clusterIds[index] ?? index)}
                 />
               );
             },

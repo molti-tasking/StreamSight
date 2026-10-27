@@ -11,6 +11,7 @@ export const Chart = ({
   chartColor,
   className,
   highlightInfo,
+  anomalies,
 }: {
   values: Record<string, number>[];
   chartColor: string;
@@ -20,6 +21,7 @@ export const Chart = ({
     opacity: number;
     lastDimension: number | undefined;
   }[];
+  anomalies?: { timestamp: number; label: string }[];
 }) => {
   const yDomain = useViewModelStore((state) => state.yDomain);
   const mode = useStreamClustersSettingsStore((state) => state.chartMode);
@@ -45,6 +47,7 @@ export const Chart = ({
         mode={mode}
         saveScreenSpace={saveScreenSpace}
         highlightInfo={highlightInfo}
+        anomalies={anomalies}
         chartColor={chartColor}
       />
     );

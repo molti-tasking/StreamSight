@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "build:wasm": "cd backend/rust_wasm_module && wasm-pack build --release --target web --out-dir pkg && wasm-pack build --release --target nodejs --out-dir pkg-node"
+    "build:wasm": "cd backend/rust_wasm_module && wasm-pack build --release --target web --out-dir pkg && wasm-pack build --release --target nodejs --out-dir pkg-node",
+    "bench:compute": "node bench/sweep.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.3",

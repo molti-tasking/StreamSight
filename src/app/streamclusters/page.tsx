@@ -9,6 +9,7 @@ import {
 import { ClusterLegend } from "@/components/ClusterLegend";
 import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
+import { TimelineOverview } from "@/components/TimelineOverview";
 import { TreemapLayout } from "@/components/TreemapLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ export default function StreamClustersPage() {
         </div>
         <StreamClustersBar />
       </div>
+      <TimelineOverview />
       <div className={"w-screen flex-1"} style={{ overflow: "overlay" }}>
         <div
           className={cn(

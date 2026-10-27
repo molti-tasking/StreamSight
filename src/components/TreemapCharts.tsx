@@ -131,6 +131,9 @@ export const TreemapCharts = ({
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
+            // FLIP-style animation: cells smoothly resize/reposition as cluster
+            // sizes change between ticks instead of snapping.
+            transition: "left 500ms ease, top 500ms ease, width 500ms ease, height 500ms ease",
           }}
         >
           <ClusterComponent currentWidth={width} totalMaxWidth={maxWidth} />

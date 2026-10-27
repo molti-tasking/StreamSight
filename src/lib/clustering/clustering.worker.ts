@@ -34,6 +34,8 @@ const clusteringApi = {
     return wasmAggregator(clean, dimensions, {
       eps: settings.eps,
       dataTicks: settings.dataTicks,
+      minPts: settings.minPts,
+      timeScale: settings.timeScale,
     }) as AggregatedProps;
   },
 
@@ -64,6 +66,7 @@ const clusteringApi = {
       const { clusterAssignment } = wasmAggregator(window, dimensions, {
         eps: settings.eps,
         dataTicks: window.length,
+        minPts: settings.minPts,
       }) as AggregatedProps;
 
       clustersInTime.push({ timestamp, clusters: clusterAssignment });

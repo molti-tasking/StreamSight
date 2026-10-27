@@ -47,12 +47,27 @@ fn aggregator_internal(
     dimensions: &[String],
     settings: &ChartPresentationSettings,
 ) -> AggregatedProps {
-    // Filter to the most recent `dataTicks` entries (clustering.ts:30-32).
-    let data_to_be_clustered: Vec<HashMap<String, f64>> = match settings.data_ticks {
-        Some(ticks) if ticks < raw_data.len() => {
-            raw_data[raw_data.len() - ticks..].to_vec()
+    // Window selection: an explicit time range (multi-scale timelines) takes
+    // precedence; otherwise fall back to the most recent `dataTicks` entries.
+    let data_to_be_clustered: Vec<HashMap<String, f64>> = if let Some(scale) =
+        &settings.time_scale
+    {
+        raw_data
+            .iter()
+            .filter(|row| {
+                row.get("timestamp")
+                    .map(|t| *t >= scale.from && *t <= scale.to)
+                    .unwrap_or(false)
+            })
+            .cloned()
+            .collect()
+    } else {
+        match settings.data_ticks {
+            Some(ticks) if ticks < raw_data.len() => {
+                raw_data[raw_data.len() - ticks..].to_vec()
+            }
+            _ => raw_data.to_vec(),
         }
-        _ => raw_data.to_vec(),
     };
 
     // Cluster (boring-data wrapping stays in JS, applied to this output).

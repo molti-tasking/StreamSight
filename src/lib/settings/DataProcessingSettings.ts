@@ -49,6 +49,8 @@ import { z } from "zod";
 
 export const dataProcessingSettingsSchema = z.object({
   eps: z.coerce.number(),
+  /** Minimum core-point neighbourhood size; 0 (or omitted) = legacy, no noise. */
+  minPts: z.coerce.number().optional(),
   dataTicks: z.coerce.number().optional(),
   timeScale: z
     .object({
@@ -61,6 +63,9 @@ export const dataProcessingSettingsSchema = z.object({
   meanRange: z.coerce.number().optional(),
   tickRange: z.coerce.number().optional(),
   saveScreenSpace: z.boolean().optional(),
+
+  /** Tolerance band (±) around the baseline; 0 = off. Used by the baseline view. */
+  baselineTolerance: z.coerce.number().optional(),
 });
 
 export type DataProcessingSettings = z.infer<

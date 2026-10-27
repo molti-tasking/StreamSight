@@ -5,7 +5,7 @@ import { useViewModelStore } from "@/store/useViewModelStore";
 import { AlertCircleIcon } from "lucide-react";
 import { memo } from "react";
 import { PlotlyChart } from "./charts/PlotlyChart";
-import { clusterColors } from "./clusterColors";
+import { colorForClusterId } from "./clusterColors";
 import { Chart } from "./Chart";
 
 export const ClusteredLineChartList = () => {
@@ -44,9 +44,21 @@ const Charts = memo(() => {
    * It can be more than 30 charts that are getting updated every second.
    */
   const aggregated = useViewModelStore((state) => state.aggregated);
+  const clusterIds = useViewModelStore((state) => state.clusterIds);
   const highlightInfo = useViewModelStore((state) => state.highlightInfo);
+  const anomalies = useViewModelStore((state) => state.anomalies);
   const yDomain = useViewModelStore((state) => state.yDomain);
   const mode = useStreamClustersSettingsStore((state) => state.chartMode);
+
+  // Color by stable cluster id so a cluster keeps its color across ticks.
+  const colorFor = (index: number) =>
+    colorForClusterId(clusterIds[index] ?? index);
+
+  // Anomalies belonging to the cluster rendered at this position.
+  const anomaliesFor = (index: number) =>
+    anomalies
+      .filter((a) => a.clusterId === (clusterIds[index] ?? index))
+      .map((a) => ({ timestamp: a.timestamp, label: a.label }));
   const saveScreenSpace = useClusterProcessingSettingsStore(
     (state) => "saveScreenSpace" in state && state.saveScreenSpace
   );
@@ -68,7 +80,7 @@ const Charts = memo(() => {
             <PlotlyChart
               values={val}
               key={index}
-              className={clusterColors[index % clusterColors.length]}
+              className={colorFor(index)}
               yDomain={yDomain}
               mode={mode}
               saveScreenSpace={saveScreenSpace}
@@ -90,7 +102,7 @@ const Charts = memo(() => {
           <PlotlyChart
             values={val}
             key={index}
-            className={clusterColors[index % clusterColors.length]}
+            className={colorFor(index)}
             yDomain={yDomain}
             mode={mode}
             saveScreenSpace={saveScreenSpace}
@@ -107,8 +119,9 @@ const Charts = memo(() => {
           values={val}
           className=""
           key={index}
-          chartColor={clusterColors[index % clusterColors.length]}
+          chartColor={colorFor(index)}
           highlightInfo={highlightInfo?.[index]}
+          anomalies={anomaliesFor(index)}
         />
       ))}
     </>

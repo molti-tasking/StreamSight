@@ -12,6 +12,17 @@ export type ClusteringSettings = {
   eps: number;
   /** Most recent N ticks to cluster. */
   dataTicks?: number;
+  /**
+   * Minimum core-point neighbourhood size for DBSCAN. When omitted (or 0) the
+   * legacy clustering runs; when > 0, textbook DBSCAN runs and outliers are
+   * labelled noise (cluster index -1).
+   */
+  minPts?: number;
+  /**
+   * Explicit time-range window (multi-scale timelines). When set, rows are
+   * selected by timestamp instead of by `dataTicks`.
+   */
+  timeScale?: { from: number; to: number };
 };
 
 /**

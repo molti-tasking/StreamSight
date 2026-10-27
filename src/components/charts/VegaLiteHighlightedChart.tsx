@@ -1,6 +1,6 @@
 import { cn, escapeVegaString } from "@/lib/utils";
 import { VegaLite, type VisualizationSpec } from "react-vega";
-import { clusterColors } from "../clusterColors";
+import { colorForClusterId } from "../clusterColors";
 import { ChartProps } from "./ChartProps";
 import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
 import { UnitSpec } from "vega-lite/build/src/spec";
@@ -14,12 +14,14 @@ export const VegaLiteHighlightedChart = ({
   saveScreenSpace,
   className,
   highlightInfo,
+  anomalies,
 }: ChartProps & {
   highlightInfo?: {
     dimension: string;
     opacity: number;
     lastDimension: number | undefined;
   }[];
+  anomalies?: { timestamp: number; label: string }[];
   chartColor: string;
 }) => {
   const selectedStreams = useStreamSelectionStore((state) => state.values);
@@ -156,7 +158,7 @@ export const VegaLiteHighlightedChart = ({
                 // We want to render the highlighted line in the color of the previous chart
                 const clusterColor =
                   lastDimension !== undefined
-                    ? clusterColors[lastDimension % clusterColors.length]
+                    ? colorForClusterId(lastDimension)
                     : "gray";
                 return {
                   test: `datum.variable === '${escapeVegaString(dimension)}'`,
@@ -279,6 +281,31 @@ export const VegaLiteHighlightedChart = ({
             } as UnitSpec<"text">,
           ];
         }),
+
+        // Anomaly markers: dashed red rules at flagged timestamps, with the
+        // auto-generated label as a tooltip.
+        ...(anomalies?.length
+          ? [
+              {
+                data: {
+                  values: anomalies.map((a) => ({
+                    timestamp: a.timestamp,
+                    label: a.label,
+                  })),
+                },
+                mark: {
+                  type: "rule",
+                  color: "#DC2626",
+                  strokeDash: [4, 2],
+                  opacity: 0.8,
+                },
+                encoding: {
+                  x: { field: "timestamp", type: "temporal" },
+                  tooltip: { field: "label", type: "nominal" },
+                },
+              } as UnitSpec<"rule">,
+            ]
+          : []),
       ],
       };
     }
@@ -291,6 +318,7 @@ export const VegaLiteHighlightedChart = ({
     saveScreenSpace,
     highlightInfo,
     selectedStreams,
+    anomalies,
   ]);
 
   return (

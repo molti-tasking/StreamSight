@@ -82,6 +82,33 @@ export const DataProcessingSettingsForm = ({
           <div className="grid w-full gap-2 items-start">
             <FormField
               control={form.control}
+              name="minPts"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Minimum Points (Outliers)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0 = off"
+                      {...field}
+                      value={field.value ?? 0}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Minimum neighbourhood size for a stream to anchor a cluster.
+                    Set above 0 to enable density-based outlier detection:
+                    streams that are too isolated are grouped into a separate
+                    grey “Outliers” cluster. 0 keeps every stream in a cluster.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid w-full gap-2 items-start">
+            <FormField
+              control={form.control}
               name="dataTicks"
               render={({ field }) => (
                 <FormItem>
@@ -92,6 +119,32 @@ export const DataProcessingSettingsForm = ({
                   <FormDescription>
                     Define the amount of how many latest timestamps should be
                     displayed or not.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid w-full gap-2 items-start">
+            <FormField
+              control={form.control}
+              name="baselineTolerance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Baseline Tolerance (±)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="0 = off"
+                      {...field}
+                      value={field.value ?? 0}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    In the baseline view, draw a ± tolerance band around the
+                    baseline and flag streams whose current deviation exceeds it.
+                    0 disables the band.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
