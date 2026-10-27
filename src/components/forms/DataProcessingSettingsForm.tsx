@@ -85,20 +85,22 @@ export const DataProcessingSettingsForm = ({
               name="minPts"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Minimum Points (Outliers)</FormLabel>
+                  <FormLabel>Minimum Points (DBSCAN minPts)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="0 = off"
+                      min={1}
+                      placeholder="2"
                       {...field}
-                      value={field.value ?? 0}
+                      value={field.value ?? 2}
                     />
                   </FormControl>
                   <FormDescription>
-                    Minimum neighbourhood size for a stream to anchor a cluster.
-                    Set above 0 to enable density-based outlier detection:
-                    streams that are too isolated are grouped into a separate
-                    grey “Outliers” cluster. 0 keeps every stream in a cluster.
+                    A stream anchors a cluster when at least this many streams
+                    (itself included) lie within the similarity threshold.
+                    Streams that are neither anchors nor within reach of one
+                    are outliers and shown in the grey “Outliers” group. With 2,
+                    any stream that has one close neighbour is clustered.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

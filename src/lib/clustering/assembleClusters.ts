@@ -7,9 +7,9 @@ export const OUTLIER_ID = -1;
  * Result of assembling a clustering from a flat per-dimension assignment.
  *
  * `aggregated` / `clusterIds` are index-aligned: `clusterIds[i]` is the cluster
- * key that produced `aggregated[i]`. `clusterAssignment` keeps the legacy
- * contract (dimension -> *position index* in `aggregated`, or -1 for
- * noise/unassigned) so existing consumers keep working unchanged.
+ * key that produced `aggregated[i]`. `clusterAssignment` maps each
+ * dimension to its *position index* in `aggregated` (noise streams point at
+ * the trailing Outliers cluster).
  */
 export type AssembledClusters = {
   aggregated: ClusterRow[][];
@@ -22,8 +22,8 @@ const TIMESTAMP_KEY = "timestamp";
 
 /**
  * Re-group a window (rows keyed by timestamp) into per-dimension time series
- * (`timestamp -> value`). Mirrors the regrouping in the Rust `clustering_data`
- * (clustering.rs:29-43) so the JS assembly produces byte-identical output.
+ * (`timestamp -> value`). Mirrors the regrouping in the Rust
+ * `clustering_data` so the JS assembly reproduces the WASM rows.
  */
 function buildSeries(
   window: ClusterRow[],
@@ -44,7 +44,7 @@ function buildSeries(
 
 /**
  * Shared y-axis domain across every non-timestamp value in the window. Mirrors
- * the loop in the Rust `aggregator_internal` (lib.rs:80-94).
+ * the y-domain loop in the Rust `aggregator_internal`.
  */
 export function computeYDomain(window: ClusterRow[]): [number, number] {
   let yMin = Infinity;
@@ -69,11 +69,11 @@ export function computeYDomain(window: ClusterRow[]): [number, number] {
  * the WASM module stateful.
  *
  * When driven with the WASM's own `clusterAssignment` (dimension -> position),
- * the output is identical to `wasmAggregator` — see `assembleClusters.test.ts`.
+ * the real clusters are identical to `wasmAggregator` — see
+ * `assembleClusters.test.ts`.
  *
- * Cluster keys `< 0` are treated as noise/unassigned: those dimensions are
- * dropped from `aggregated` and reported as position -1, matching the previous
- * behaviour. (Explicit "Outliers" rendering arrives with the minPts feature.)
+ * Cluster keys `< 0` (DBSCAN noise) are collected into one trailing Outliers
+ * cluster whose `clusterIds` entry is `OUTLIER_ID`.
  */
 export function assembleClusters(
   window: ClusterRow[],

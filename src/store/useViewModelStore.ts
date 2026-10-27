@@ -88,13 +88,6 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         tickRange,
         saveScreenSpace,
       };
-      // Only enable the noise-aware DBSCAN path when minPts > 0; otherwise keep
-      // the legacy (golden) behaviour.
-      const effectiveMinPts =
-        dataProcessingSettings.minPts && dataProcessingSettings.minPts > 0
-          ? dataProcessingSettings.minPts
-          : undefined;
-
       // Multi-scale timelines: when the user has brushed/selected an explicit
       // range, cluster that time window instead of the latest N ticks.
       const nav = useTemporalNavigationStore.getState();
@@ -107,7 +100,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         getClusteringClient().aggregator(values, dimensions, {
           eps: dataProcessingSettings.eps,
           dataTicks: dataProcessingSettings.dataTicks,
-          minPts: effectiveMinPts,
+          minPts: dataProcessingSettings.minPts,
           timeScale: navTimeScale,
         })
       );

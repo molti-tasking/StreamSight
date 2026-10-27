@@ -49,8 +49,8 @@ import { z } from "zod";
 
 export const dataProcessingSettingsSchema = z.object({
   eps: z.coerce.number<number>(),
-  /** Minimum core-point neighbourhood size; 0 (or omitted) = legacy, no noise. */
-  minPts: z.coerce.number<number>().optional(),
+  /** DBSCAN minPts (core-point neighbourhood size incl. the stream itself). */
+  minPts: z.coerce.number<number>().int().min(1).optional(),
   dataTicks: z.coerce.number<number>().optional(),
   timeScale: z
     .object({

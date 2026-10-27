@@ -1,9 +1,8 @@
 import { expect, test } from "vitest";
 import { createRequire } from "node:module";
 
-// Exercises the corrected DBSCAN path (minPts > 0) which labels outliers as
-// cluster index -1. The legacy path (minPts omitted) is pinned separately by
-// clusteringWasm.test.ts and must stay byte-identical.
+// DBSCAN noise labelling: streams that are neither core points nor
+// density-reachable from one get cluster index -1.
 const require = createRequire(import.meta.url);
 const wasm = require(
   "../../../backend/rust_wasm_module/pkg-node/rust_wasm_module.js"
@@ -45,14 +44,24 @@ test("minPts path labels a lone stream as noise (-1)", () => {
   expect(result.aggregated).toHaveLength(1);
 });
 
-test("minPts=0 / omitted keeps the legacy behavior (no noise)", () => {
+test("omitted minPts defaults to 2: an isolated stream is still noise", () => {
   const result = wasm.aggregator(inputValues, dimensions, {
     eps: 5,
     dataTicks: 3,
   });
   const assignment = Object.fromEntries(result.clusterAssignment);
-  // Legacy DBSCAN absorbs every stream into some cluster — none are noise.
-  for (const dim of dimensions) {
-    expect(assignment[dim]).toBeGreaterThanOrEqual(0);
-  }
+  expect(assignment.D).toBe(-1);
+  expect(assignment.A).toBe(0);
+  expect(assignment.B).toBe(0);
+  expect(assignment.C).toBe(0);
+});
+
+test("minPts larger than any neighbourhood makes every stream noise", () => {
+  const result = wasm.aggregator(inputValues, dimensions, {
+    eps: 5,
+    dataTicks: 3,
+    minPts: 5,
+  });
+  for (const [, cluster] of result.clusterAssignment) expect(cluster).toBe(-1);
+  expect(result.aggregated).toHaveLength(0);
 });

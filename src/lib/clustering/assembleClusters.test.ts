@@ -28,27 +28,31 @@ const wasm = require(
 // the JS assembly works on an already-windowed slice, so replicate that here.
 const window = inputValues.slice(-settings.dataTicks);
 
-test("assembleClusters reproduces the WASM aggregator byte-for-byte", () => {
-  const wasmResult = wasm.aggregator(inputValues, dimensions, {
-    dataTicks: settings.dataTicks,
-    eps: settings.eps,
-  });
-
+test("assembleClusters reproduces the WASM clusters and appends noise as Outliers", () => {
+  const wasmResult = wasm.aggregator(inputValues, dimensions, settings);
   const assignment = new Map<string, number>(wasmResult.clusterAssignment);
   const assembled = assembleClusters(window, dimensions, assignment);
+  const clusterCount = wasmResult.aggregated.length;
+  const noise = wasmResult.clusterAssignment.filter(([, c]) => c === OUTLIER_ID);
+  // The fixture must exercise noise for this test to mean anything.
+  expect(noise.length).toBeGreaterThan(0);
 
-  expect(assembled.clusterAssignment).toStrictEqual(
-    wasmResult.clusterAssignment
+  // Real clusters are identical to the WASM output, in the same order...
+  expect(assembled.aggregated.slice(0, clusterCount)).toStrictEqual(
+    wasmResult.aggregated
   );
   expect(assembled.yDomain).toStrictEqual(wasmResult.yDomain);
-  expect(assembled.aggregated).toStrictEqual(wasmResult.aggregated);
+  // ...and noise streams form one trailing Outliers cluster.
+  expect(assembled.aggregated).toHaveLength(clusterCount + 1);
+  expect(assembled.clusterIds[clusterCount]).toBe(OUTLIER_ID);
+  const reported = new Map(assembled.clusterAssignment);
+  for (const [dim, cluster] of wasmResult.clusterAssignment) {
+    expect(reported.get(dim)).toBe(cluster === OUTLIER_ID ? clusterCount : cluster);
+  }
 });
 
 test("clusterIds are index-aligned with the assembled clusters", () => {
-  const wasmResult = wasm.aggregator(inputValues, dimensions, {
-    dataTicks: settings.dataTicks,
-    eps: settings.eps,
-  });
+  const wasmResult = wasm.aggregator(inputValues, dimensions, settings);
   const assignment = new Map<string, number>(wasmResult.clusterAssignment);
   const assembled = assembleClusters(window, dimensions, assignment);
 

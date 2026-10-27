@@ -15,8 +15,18 @@ pub struct AggregatedProps {
     pub cluster_assignment: Vec<(String, i64)>,
 }
 
-/// WASM entry point. Faithful port of `aggregator` in
-/// `src/app/actions/clustering.ts`. Inputs/outputs are plain JS values.
+/// Identifies the clustering algorithm compiled into this module. Bumped
+/// whenever clustering output changes, so tests can detect a stale build of
+/// `pkg/` or `pkg-node/`.
+pub const ALGO_VERSION: &str = "dbscan-1";
+
+#[wasm_bindgen]
+pub fn algo_version() -> String {
+    ALGO_VERSION.to_string()
+}
+
+/// WASM entry point: windows the rows, clusters the columns and returns
+/// `{ aggregated, yDomain, clusterAssignment }` as plain JS values.
 #[wasm_bindgen]
 pub fn aggregator(
     raw_data: JsValue,

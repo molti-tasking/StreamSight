@@ -35,9 +35,8 @@ function parseArgs(argv) {
     streams: nums(args.streams, [10, 50, 100, 200, 500]),
     ticks: nums(args.ticks, [20, 50]),
     eps: nums(args.eps, [15]),
-    // minPts: 0 means "legacy algorithm" (None on the Rust side); >0 uses the
-    // corrected DBSCAN with a noise label once that feature lands.
-    minpts: nums(args.minpts, [0]),
+    // DBSCAN minPts (core-point neighbourhood size, incl. the point itself).
+    minpts: nums(args.minpts, [2]),
     rows: Number(args.rows ?? 400),
     repeats: Number(args.repeats ?? 5),
     warmup: Number(args.warmup ?? 2),
@@ -158,8 +157,7 @@ function main() {
     for (const ticks of cfg.ticks) {
       for (const eps of cfg.eps) {
         for (const minPts of cfg.minpts) {
-          const settings = { eps, dataTicks: ticks };
-          if (minPts > 0) settings.minPts = minPts; // ignored until A5 lands
+          const settings = { eps, dataTicks: ticks, minPts };
           const r = timeAggregator(
             values,
             dimensions,

@@ -13,9 +13,9 @@ export type ClusteringSettings = {
   /** Most recent N ticks to cluster. */
   dataTicks?: number;
   /**
-   * Minimum core-point neighbourhood size for DBSCAN. When omitted (or 0) the
-   * legacy clustering runs; when > 0, textbook DBSCAN runs and outliers are
-   * labelled noise (cluster index -1).
+   * DBSCAN minPts: minimum eps-neighbourhood size (including the stream
+   * itself) for a core point. Streams that are neither core nor reachable
+   * from a core point are noise (cluster index -1). Defaults to 2 in WASM.
    */
   minPts?: number;
   /**
