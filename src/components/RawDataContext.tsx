@@ -41,8 +41,15 @@ export const RawDataContextProvider = ({
   const [streamingInterval, setStreamingInterval] = useState<null | number>(
     null
   );
-  const [columns, setColumns] = useState<string[]>([]);
-  const [data, setData] = useState<number[][]>([]);
+  // Seed 200 rows x 20 columns on first render (lazy initialisers instead of
+  // a mount effect that would immediately set state again).
+  const [columns, setColumns] = useState<string[]>(() => [
+    "timestamp",
+    ...Array.from({ length: 19 }, (_, index) => `Col ${index + 1}`),
+  ]);
+  const [data, setData] = useState<number[][]>(() =>
+    generateRandomTestData(200, 20, 5, 10)
+  );
 
   const generateData = (
     rowsCount: number,
@@ -68,12 +75,6 @@ export const RawDataContextProvider = ({
 
     setData(newData);
   };
-
-  useEffect(() => {
-    if (!data.length) {
-      generateData(200, 20);
-    }
-  }, []);
 
   useEffect(() => {
     if (streamingInterval === null) return;
