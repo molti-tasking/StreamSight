@@ -2,7 +2,9 @@ import { expect, test } from "vitest";
 import { createRequire } from "node:module";
 
 // DBSCAN noise labelling: streams that are neither core points nor
-// density-reachable from one get cluster index -1.
+// density-reachable from one get cluster index -1. These streams are almost
+// flat, so the tests compare raw values (zNormalize: false); z-normalization
+// would stretch the tiny wiggles to unit variance.
 const require = createRequire(import.meta.url);
 const wasm = require(
   "../../../backend/rust_wasm_module/pkg-node/rust_wasm_module.js"
@@ -31,6 +33,7 @@ test("minPts path labels a lone stream as noise (-1)", () => {
     eps: 5,
     dataTicks: 3,
     minPts: 3,
+    zNormalize: false,
   });
 
   const assignment = Object.fromEntries(result.clusterAssignment);
@@ -48,6 +51,7 @@ test("omitted minPts defaults to 2: an isolated stream is still noise", () => {
   const result = wasm.aggregator(inputValues, dimensions, {
     eps: 5,
     dataTicks: 3,
+    zNormalize: false,
   });
   const assignment = Object.fromEntries(result.clusterAssignment);
   expect(assignment.D).toBe(-1);
@@ -61,6 +65,7 @@ test("minPts larger than any neighbourhood makes every stream noise", () => {
     eps: 5,
     dataTicks: 3,
     minPts: 5,
+    zNormalize: false,
   });
   for (const [, cluster] of result.clusterAssignment) expect(cluster).toBe(-1);
   expect(result.aggregated).toHaveLength(0);

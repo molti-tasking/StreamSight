@@ -1,7 +1,7 @@
 mod clustering;
 pub mod dbscan;
 use clustering::{clustering_data, ChartPresentationSettings};
-use dbscan::{Distances, SeriesMatrix};
+use dbscan::{z_normalize, Distances, SeriesMatrix};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
@@ -20,7 +20,7 @@ pub struct AggregatedProps {
 /// Identifies the clustering algorithm compiled into this module. Bumped
 /// whenever clustering output changes, so tests can detect a stale build of
 /// `pkg/` or `pkg-node/`.
-pub const ALGO_VERSION: &str = "dbscan-rms-2";
+pub const ALGO_VERSION: &str = "dbscan-rms-z-3";
 
 #[wasm_bindgen]
 pub fn algo_version() -> String {
@@ -126,8 +126,12 @@ pub fn cluster_labels(
     n_ticks: usize,
     eps: f64,
     min_pts: usize,
+    z_normalized: bool,
 ) -> Vec<i32> {
-    let matrix = SeriesMatrix::new(n_series, n_ticks, values.to_vec());
+    let mut matrix = SeriesMatrix::new(n_series, n_ticks, values.to_vec());
+    if z_normalized {
+        z_normalize(&mut matrix);
+    }
     dbscan::dbscan(&Distances::new(&matrix), eps, min_pts)
 }
 
@@ -141,10 +145,12 @@ pub struct PreparedWindow {
 #[wasm_bindgen]
 impl PreparedWindow {
     #[wasm_bindgen(constructor)]
-    pub fn new(values: &[f64], n_series: usize, n_ticks: usize) -> PreparedWindow {
-        PreparedWindow {
-            matrix: SeriesMatrix::new(n_series, n_ticks, values.to_vec()),
+    pub fn new(values: &[f64], n_series: usize, n_ticks: usize, z_normalized: bool) -> PreparedWindow {
+        let mut matrix = SeriesMatrix::new(n_series, n_ticks, values.to_vec());
+        if z_normalized {
+            z_normalize(&mut matrix);
         }
+        PreparedWindow { matrix }
     }
 
     /// DBSCAN labels for each stream (`-1` = noise).

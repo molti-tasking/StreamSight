@@ -1,4 +1,4 @@
-use crate::dbscan::{dbscan, Distances, SeriesMatrix, NOISE};
+use crate::dbscan::{dbscan, z_normalize, Distances, SeriesMatrix, NOISE};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -20,7 +20,8 @@ pub struct ChartPresentationSettings {
     #[serde(rename = "timeScale", default)]
     pub time_scale: Option<TimeScale>,
     /// DBSCAN neighbourhood radius, as an RMS difference between two streams
-    /// over the ticks they share. Missing or <= 0 disables clustering.
+    /// over the ticks they share (in z-units when `z_normalize`). Missing or
+    /// <= 0 disables clustering.
     #[serde(default)]
     pub eps: Option<f64>,
     /// DBSCAN `minPts`: a stream is a *core* point when its eps-neighbourhood,
@@ -30,11 +31,20 @@ pub struct ChartPresentationSettings {
     /// JS `undefined` deserializes to the default instead of failing.
     #[serde(rename = "minPts", default)]
     pub min_pts: Option<usize>,
+    /// Z-normalize each stream over the window before computing distances
+    /// (shape-based clustering). Defaults to true. Only the distances use the
+    /// normalized values; the returned rows keep the raw values.
+    #[serde(rename = "zNormalize", default)]
+    pub z_normalize: Option<bool>,
 }
 
 impl ChartPresentationSettings {
     pub fn min_pts(&self) -> usize {
         self.min_pts.unwrap_or(2).max(1)
+    }
+
+    pub fn z_normalize(&self) -> bool {
+        self.z_normalize.unwrap_or(true)
     }
 }
 
@@ -81,7 +91,15 @@ pub fn clustering_data(
     let (ticks, matrix) = series_matrix(rows, dimensions);
 
     let labels: Vec<i32> = match settings.eps {
-        Some(eps) if eps > 0.0 => dbscan(&Distances::new(&matrix), eps, settings.min_pts()),
+        Some(eps) if eps > 0.0 => {
+            if settings.z_normalize() {
+                let mut normalized = SeriesMatrix::new(matrix.n_series, matrix.n_ticks, matrix.values.clone());
+                z_normalize(&mut normalized);
+                dbscan(&Distances::new(&normalized), eps, settings.min_pts())
+            } else {
+                dbscan(&Distances::new(&matrix), eps, settings.min_pts())
+            }
+        }
         _ => vec![0; dimensions.len()],
     };
 

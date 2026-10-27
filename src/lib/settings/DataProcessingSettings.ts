@@ -51,6 +51,8 @@ export const dataProcessingSettingsSchema = z.object({
   eps: z.coerce.number<number>(),
   /** DBSCAN minPts (core-point neighbourhood size incl. the stream itself). */
   minPts: z.coerce.number<number>().int().min(1).optional(),
+  /** Z-normalize streams before computing distances (shape-based clusters). */
+  zNormalize: z.boolean().optional(),
   dataTicks: z.coerce.number<number>().optional(),
   timeScale: z
     .object({

@@ -71,6 +71,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       const {
         eps,
         minPts,
+        zNormalize,
         ignoreBoringDataMode,
         dataTicks,
         timeScale,
@@ -81,6 +82,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       const dataProcessingSettings: DataProcessingSettings = {
         eps,
         minPts,
+        zNormalize,
         ignoreBoringDataMode,
         dataTicks,
         timeScale,
@@ -101,6 +103,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
           eps: dataProcessingSettings.eps,
           dataTicks: dataProcessingSettings.dataTicks,
           minPts: dataProcessingSettings.minPts,
+          zNormalize: dataProcessingSettings.zNormalize,
           timeScale: navTimeScale,
         })
       );

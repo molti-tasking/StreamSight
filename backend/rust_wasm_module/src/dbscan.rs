@@ -35,6 +35,33 @@ impl SeriesMatrix {
     }
 }
 
+/// Below this standard deviation a stream counts as constant.
+const CONSTANT_STD: f64 = 1e-12;
+
+/// Z-normalizes every stream in place over its finite values in the window:
+/// `(x - mean) / std`, with the population standard deviation. Clusters then
+/// reflect the *shape* of the streams rather than their level or scale, and
+/// eps has the same meaning on every dataset: for two streams with values at
+/// the same ticks, the RMS distance is `sqrt(2 * (1 - r))`, where r is their
+/// Pearson correlation. Constant streams are centred to 0 (they have no
+/// shape); missing values stay `NaN`.
+pub fn z_normalize(matrix: &mut SeriesMatrix) {
+    let n_ticks = matrix.n_ticks;
+    for series in matrix.values.chunks_mut(n_ticks.max(1)) {
+        let finite = series.iter().filter(|v| v.is_finite());
+        let count = finite.clone().count();
+        if count == 0 {
+            continue;
+        }
+        let mean = finite.clone().sum::<f64>() / count as f64;
+        let variance = finite.map(|v| (v - mean) * (v - mean)).sum::<f64>() / count as f64;
+        let std = variance.sqrt();
+        for v in series.iter_mut().filter(|v| v.is_finite()) {
+            *v = if std < CONSTANT_STD { 0.0 } else { (*v - mean) / std };
+        }
+    }
+}
+
 /// Minimum number of ticks two streams must both have values for before they
 /// are compared: half of the window, at least one. Pairs with less overlap are
 /// never neighbours.

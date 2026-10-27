@@ -19,6 +19,11 @@ export type ClusteringSettings = {
    */
   minPts?: number;
   /**
+   * Z-normalize each stream over the window before computing distances, so
+   * clusters reflect shape rather than level/scale. Defaults to true in WASM.
+   */
+  zNormalize?: boolean;
+  /**
    * Explicit time-range window (multi-scale timelines). When set, rows are
    * selected by timestamp instead of by `dataTicks`.
    */

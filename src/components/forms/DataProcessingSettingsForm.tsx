@@ -15,8 +15,12 @@ import {
   dataProcessingSettingsSchema,
 } from "@/lib/settings/DataProcessingSettings";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
+import {
+  correlationForEps,
+  defaultEps,
+} from "@/lib/clustering/epsDefaults";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
 
@@ -43,6 +47,8 @@ export const DataProcessingSettingsForm = ({
     resolver: zodResolver(dataProcessingSettingsSchema),
     defaultValues: settings,
   });
+  const zNormalize = useWatch({ control: form.control, name: "zNormalize" });
+  const eps = useWatch({ control: form.control, name: "eps" });
 
   const onSubmit = (data: DataProcessingSettings) => {
     // addSettingUpdateEvent(settings, data);
@@ -55,23 +61,66 @@ export const DataProcessingSettingsForm = ({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, (e) => console.log(e))}>
         <div className="grid gap-4">
+          <FormField
+            control={form.control}
+            name="zNormalize"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center gap-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value ?? true}
+                    onCheckedChange={(checked) => {
+                      const next = checked === true;
+                      field.onChange(next);
+                      // eps means something different in each mode.
+                      form.setValue("eps", defaultEps(next));
+                    }}
+                  />
+                </FormControl>
+                <div className="space-y-0.5">
+                  <FormLabel>Compare shapes (z-normalize streams)</FormLabel>
+                  <FormDescription>
+                    Each stream is rescaled to mean 0 and standard deviation 1
+                    over the window before streams are compared, so clusters
+                    group streams that move together regardless of their level
+                    or scale.
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+
           <div className="grid w-full gap-2 items-start">
             <FormField
               control={form.control}
               name="eps"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Similarity Threshold</FormLabel>
+                  <FormLabel>Similarity Threshold (DBSCAN eps)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
+                      step="any"
+                      min={0}
                       placeholder="Similarity Threshold"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    Define the threshold of how similar one cluster should be.
-                    The smaller the value, the more clusters you will have.
+                    Maximum RMS difference between two streams, over the time
+                    points both have values for, for them to count as
+                    neighbours. Smaller values give more, tighter clusters.
+                    {zNormalize !== false && Number.isFinite(Number(eps)) && (
+                      <>
+                        {" "}
+                        With z-normalization, eps {Number(eps)} means streams
+                        correlate at least r ≈{" "}
+                        {correlationForEps(Number(eps)).toFixed(2)}.
+                      </>
+                    )}
+                    {zNormalize === false && (
+                      <> Without normalization eps is in the data&apos;s units.</>
+                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

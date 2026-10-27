@@ -44,6 +44,7 @@ const clusteringApi = {
       eps: settings.eps,
       dataTicks: settings.dataTicks,
       minPts: settings.minPts,
+      zNormalize: settings.zNormalize,
       timeScale: settings.timeScale,
     }) as AggregatedProps;
   },
@@ -76,6 +77,7 @@ const clusteringApi = {
         eps: settings.eps,
         dataTicks: window.length,
         minPts: settings.minPts,
+        zNormalize: settings.zNormalize,
       }) as AggregatedProps;
 
       clustersInTime.push({ timestamp, clusters: clusterAssignment });
