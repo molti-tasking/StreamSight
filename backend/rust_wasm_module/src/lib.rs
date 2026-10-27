@@ -1,5 +1,7 @@
 mod clustering;
+pub mod dbscan;
 use clustering::{clustering_data, ChartPresentationSettings};
+use dbscan::{Distances, SeriesMatrix};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
@@ -18,7 +20,7 @@ pub struct AggregatedProps {
 /// Identifies the clustering algorithm compiled into this module. Bumped
 /// whenever clustering output changes, so tests can detect a stale build of
 /// `pkg/` or `pkg-node/`.
-pub const ALGO_VERSION: &str = "dbscan-1";
+pub const ALGO_VERSION: &str = "dbscan-rms-2";
 
 #[wasm_bindgen]
 pub fn algo_version() -> String {
@@ -81,24 +83,13 @@ fn aggregator_internal(
     };
 
     // Cluster (boring-data wrapping stays in JS, applied to this output).
-    let aggregated = clustering_data(&data_to_be_clustered, dimensions, settings);
+    let (aggregated, labels) = clustering_data(&data_to_be_clustered, dimensions, settings);
 
     // Cluster assignment: index of the cluster each dimension landed in, or -1.
     let cluster_assignment: Vec<(String, i64)> = dimensions
         .iter()
-        .map(|val| {
-            let idx = aggregated
-                .iter()
-                .position(|entries| {
-                    entries
-                        .first()
-                        .map(|e| e.contains_key(val))
-                        .unwrap_or(false)
-                })
-                .map(|p| p as i64)
-                .unwrap_or(-1);
-            (val.clone(), idx)
-        })
+        .zip(labels)
+        .map(|(dimension, label)| (dimension.clone(), label as i64))
         .collect();
 
     // Shared y-axis domain across all (non-timestamp) values in the window.
@@ -122,5 +113,42 @@ fn aggregator_internal(
         aggregated,
         y_domain: (y_min, y_max),
         cluster_assignment,
+    }
+}
+
+/// DBSCAN labels for a dense window, for benchmarks. `values` holds
+/// `n_series * n_ticks` numbers, series-major, `NaN` for missing values.
+/// Skips row (de)serialization, so it measures the clustering itself.
+#[wasm_bindgen]
+pub fn cluster_labels(
+    values: &[f64],
+    n_series: usize,
+    n_ticks: usize,
+    eps: f64,
+    min_pts: usize,
+) -> Vec<i32> {
+    let matrix = SeriesMatrix::new(n_series, n_ticks, values.to_vec());
+    dbscan::dbscan(&Distances::new(&matrix), eps, min_pts)
+}
+
+/// A window whose pairwise distances are computed once, so DBSCAN can be
+/// re-run cheaply for many `eps`/`minPts` values (eps-sensitivity sweeps).
+#[wasm_bindgen]
+pub struct PreparedWindow {
+    matrix: SeriesMatrix,
+}
+
+#[wasm_bindgen]
+impl PreparedWindow {
+    #[wasm_bindgen(constructor)]
+    pub fn new(values: &[f64], n_series: usize, n_ticks: usize) -> PreparedWindow {
+        PreparedWindow {
+            matrix: SeriesMatrix::new(n_series, n_ticks, values.to_vec()),
+        }
+    }
+
+    /// DBSCAN labels for each stream (`-1` = noise).
+    pub fn dbscan(&self, eps: f64, min_pts: usize) -> Vec<i32> {
+        dbscan::dbscan(&Distances::new(&self.matrix), eps, min_pts)
     }
 }

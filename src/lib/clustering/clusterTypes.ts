@@ -26,17 +26,16 @@ export type ClusteringSettings = {
 };
 
 /**
- * Coerce a streamed row into finite numbers keyed by column. Loaded datasets can
- * contain `null` (missing values); the original JS clustering treated those as 0
- * via arithmetic coercion, so we replicate that here before handing data to WASM
- * (which only accepts `f64`).
+ * Drop missing values from streamed rows before handing them to WASM (which
+ * only accepts `f64`). Loaded datasets can contain `null`/`NaN`; those keys are
+ * omitted, never replaced by 0, so the clustering distance skips them.
  */
 export function sanitizeRows(rawData: ClusterRow[]): ClusterRow[] {
   return rawData.map((row) => {
     const clean: ClusterRow = {};
     for (const key in row) {
       const value = row[key];
-      clean[key] = Number.isFinite(value) ? (value as number) : 0;
+      if (Number.isFinite(value)) clean[key] = value as number;
     }
     return clean;
   });

@@ -1,3 +1,4 @@
+use crate::dbscan::{dbscan, Distances, SeriesMatrix, NOISE};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -18,6 +19,8 @@ pub struct ChartPresentationSettings {
     pub data_ticks: Option<usize>,
     #[serde(rename = "timeScale", default)]
     pub time_scale: Option<TimeScale>,
+    /// DBSCAN neighbourhood radius, as an RMS difference between two streams
+    /// over the ticks they share. Missing or <= 0 disables clustering.
     #[serde(default)]
     pub eps: Option<f64>,
     /// DBSCAN `minPts`: a stream is a *core* point when its eps-neighbourhood,
@@ -35,152 +38,84 @@ impl ChartPresentationSettings {
     }
 }
 
-/// Groups the time-series columns into clusters with DBSCAN. When `eps` is
-/// missing or not positive, clustering is disabled and all columns form one
-/// group. Noise columns are left out of every cluster.
+const TIMESTAMP: &str = "timestamp";
+
+/// Lays the window's rows out as a streams × ticks matrix on the sorted union
+/// of their timestamps. Values that are missing or not finite become `NaN`.
+pub fn series_matrix(rows: &[HashMap<String, f64>], dimensions: &[String]) -> (Vec<f64>, SeriesMatrix) {
+    let mut ticks: Vec<f64> = rows
+        .iter()
+        .filter_map(|row| row.get(TIMESTAMP).copied())
+        .filter(|t| t.is_finite())
+        .collect();
+    ticks.sort_by(|a, b| a.total_cmp(b));
+    ticks.dedup();
+
+    let n_ticks = ticks.len();
+    let mut values = vec![f64::NAN; dimensions.len() * n_ticks];
+    for row in rows {
+        let Some(t) = row.get(TIMESTAMP) else { continue };
+        let Ok(tick) = ticks.binary_search_by(|probe| probe.total_cmp(t)) else {
+            continue;
+        };
+        for (series, dimension) in dimensions.iter().enumerate() {
+            if let Some(v) = row.get(dimension) {
+                if v.is_finite() {
+                    values[series * n_ticks + tick] = *v;
+                }
+            }
+        }
+    }
+    (ticks, SeriesMatrix::new(dimensions.len(), n_ticks, values))
+}
+
+/// Clusters the window's columns with DBSCAN and returns, per cluster, its
+/// rows (one per tick at which a member has a value) together with each
+/// dimension's cluster label (`-1` = noise). When eps is missing or not
+/// positive, clustering is disabled and all columns form one cluster.
 pub fn clustering_data(
-    data_to_be_clustered: &[HashMap<String, f64>],
+    rows: &[HashMap<String, f64>],
     dimensions: &[String],
     settings: &ChartPresentationSettings,
-) -> Vec<Vec<HashMap<String, f64>>> {
-    if let Some(eps) = settings.eps {
-        if eps > 0.0 {
-            // Re-group entries (grouped by timestamp) into per-column time series
-            // so distances between whole series can be computed.
-            let all_time_series: Vec<(String, HashMap<i64, f64>)> = dimensions
+) -> (Vec<Vec<HashMap<String, f64>>>, Vec<i32>) {
+    let (ticks, matrix) = series_matrix(rows, dimensions);
+
+    let labels: Vec<i32> = match settings.eps {
+        Some(eps) if eps > 0.0 => dbscan(&Distances::new(&matrix), eps, settings.min_pts()),
+        _ => vec![0; dimensions.len()],
+    };
+
+    let cluster_count = labels.iter().copied().max().map_or(0, |m| (m + 1).max(0)) as usize;
+    let mut members: Vec<Vec<usize>> = vec![Vec::new(); cluster_count];
+    for (series, &label) in labels.iter().enumerate() {
+        if label != NOISE {
+            members[label as usize].push(series);
+        }
+    }
+
+    let aggregated = members
+        .iter()
+        .map(|cluster| {
+            ticks
                 .iter()
-                .map(|dimension| {
-                    let mut time_series: HashMap<i64, f64> = HashMap::new();
-                    for curr in data_to_be_clustered.iter() {
-                        if let Some(ts) = curr.get("timestamp") {
-                            let timestamp = *ts as i64;
-                            if let Some(value) = curr.get(dimension) {
-                                time_series.insert(timestamp, *value);
-                            }
+                .enumerate()
+                .filter_map(|(tick, &timestamp)| {
+                    let mut entry: HashMap<String, f64> = HashMap::new();
+                    for &series in cluster {
+                        let v = matrix.values[series * matrix.n_ticks + tick];
+                        if v.is_finite() {
+                            entry.insert(dimensions[series].clone(), v);
                         }
                     }
-                    (dimension.clone(), time_series)
+                    if entry.is_empty() {
+                        return None;
+                    }
+                    entry.insert(TIMESTAMP.to_string(), timestamp);
+                    Some(entry)
                 })
-                .collect();
+                .collect()
+        })
+        .collect();
 
-            let clusters = clustering_dbscan(&all_time_series, eps, settings.min_pts());
-
-            return clusters
-                .into_iter()
-                .map(|cluster| {
-                    // Timestamps sorted ascending so the emitted rows keep a
-                    // stable chronological order across ticks.
-                    let mut timestamps: Vec<i64> = cluster[0].1.keys().cloned().collect();
-                    timestamps.sort_unstable();
-
-                    timestamps
-                        .into_iter()
-                        .map(|timestamp| {
-                            let mut entry: HashMap<String, f64> = HashMap::new();
-                            entry.insert("timestamp".to_string(), timestamp as f64);
-                            for (col_name, values) in &cluster {
-                                if let Some(value) = values.get(&timestamp) {
-                                    entry.insert(col_name.clone(), *value);
-                                }
-                            }
-                            entry
-                        })
-                        .collect()
-                })
-                .collect();
-        }
-    }
-
-    vec![data_to_be_clustered.to_vec()]
-}
-
-/// Textbook DBSCAN over whole time series (one point per column).
-fn clustering_dbscan(
-    values: &[(String, HashMap<i64, f64>)],
-    eps: f64,
-    min_pts: usize,
-) -> Vec<Vec<(String, HashMap<i64, f64>)>> {
-    let calculate_distance = |a: &(String, HashMap<i64, f64>),
-                              b: &(String, HashMap<i64, f64>)|
-     -> f64 {
-        let mut sum = 0.0;
-        for (key, value_a) in a.1.iter() {
-            let value_b = b.1.get(key).copied().unwrap_or(0.0);
-            sum += (value_a - value_b).powi(2);
-        }
-        sum.sqrt()
-    };
-
-    let get_neighbors = |point_index: usize| -> Vec<usize> {
-        let mut neighbors = Vec::new();
-        for i in 0..values.len() {
-            if i != point_index
-                && calculate_distance(&values[point_index], &values[i]) <= eps
-            {
-                neighbors.push(i);
-            }
-        }
-        neighbors
-    };
-
-    dbscan_with_noise(values, min_pts, &get_neighbors)
-}
-
-/// Textbook DBSCAN (Ester et al. 1996) with a real `min_pts` and explicit
-/// noise. A point is a *core* point when its eps-neighbourhood (including
-/// itself) has at least `min_pts` members; clusters grow only through core
-/// points. Points that are neither core nor density-reachable are returned
-/// nowhere, so the caller reports them as cluster index -1 (outliers).
-fn dbscan_with_noise<F>(
-    values: &[(String, HashMap<i64, f64>)],
-    min_pts: usize,
-    get_neighbors: &F,
-) -> Vec<Vec<(String, HashMap<i64, f64>)>>
-where
-    F: Fn(usize) -> Vec<usize>,
-{
-    const UNDEFINED: i64 = -2;
-    const NOISE: i64 = -1;
-    let n = values.len();
-    let mut labels = vec![UNDEFINED; n];
-    let mut cluster_id: i64 = 0;
-
-    for i in 0..n {
-        if labels[i] != UNDEFINED {
-            continue;
-        }
-        let neighbors = get_neighbors(i);
-        if neighbors.len() + 1 < min_pts {
-            labels[i] = NOISE; // not a core point (may still become a border)
-            continue;
-        }
-        labels[i] = cluster_id;
-        let mut seeds = neighbors;
-        let mut k = 0;
-        while k < seeds.len() {
-            let q = seeds[k];
-            k += 1;
-            if labels[q] == NOISE {
-                labels[q] = cluster_id; // border point joins the cluster
-            }
-            if labels[q] != UNDEFINED {
-                continue;
-            }
-            labels[q] = cluster_id;
-            let q_neighbors = get_neighbors(q);
-            if q_neighbors.len() + 1 >= min_pts {
-                seeds.extend(q_neighbors); // q is core: expand from it too
-            }
-        }
-        cluster_id += 1;
-    }
-
-    let mut clusters: Vec<Vec<(String, HashMap<i64, f64>)>> =
-        vec![Vec::new(); cluster_id.max(0) as usize];
-    for i in 0..n {
-        if labels[i] >= 0 {
-            clusters[labels[i] as usize].push(values[i].clone());
-        }
-    }
-    clusters
+    (aggregated, labels)
 }
