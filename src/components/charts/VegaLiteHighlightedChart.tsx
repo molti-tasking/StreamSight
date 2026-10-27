@@ -1,9 +1,10 @@
 import { cn, escapeVegaString } from "@/lib/utils";
-import { VegaLite, type VisualizationSpec } from "react-vega";
+import type { VisualizationSpec } from "vega-embed";
+import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 import { colorForClusterId } from "../clusterColors";
 import { ChartProps } from "./ChartProps";
 import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
-import { UnitSpec } from "vega-lite/build/src/spec";
+import type { UnitSpec } from "vega-lite/types_unstable/spec/unit.js";
 import { LegendButton } from "./LegendButton";
 import { useMemo } from "react";
 
@@ -40,7 +41,7 @@ export const VegaLiteHighlightedChart = ({
 
     if (values?.[0] && Object.keys(values[0]).length === 2) {
     spec = {
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      $schema: VL_SCHEMA,
       width: "container",
       height: "container",
       background: "transparent",
@@ -90,7 +91,7 @@ export const VegaLiteHighlightedChart = ({
     };
   } else {
     spec = {
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      $schema: VL_SCHEMA,
 
       padding: 0,
       width: "container",
@@ -265,7 +266,7 @@ export const VegaLiteHighlightedChart = ({
                   value: 0,
                 },
               },
-            } as UnitSpec<"line">,
+            } as UnitSpec<string>,
             {
               mark: { type: "text", align: "right", dy: -5 },
               encoding: {
@@ -278,7 +279,7 @@ export const VegaLiteHighlightedChart = ({
                 text: { value },
               },
               transform: [{ filter: `datum.variable === '${safeValue}'` }],
-            } as UnitSpec<"text">,
+            } as UnitSpec<string>,
           ];
         }),
 
@@ -303,7 +304,7 @@ export const VegaLiteHighlightedChart = ({
                   x: { field: "timestamp", type: "temporal" },
                   tooltip: { field: "label", type: "nominal" },
                 },
-              } as UnitSpec<"rule">,
+              } as UnitSpec<string>,
             ]
           : []),
       ],
@@ -324,7 +325,7 @@ export const VegaLiteHighlightedChart = ({
   return (
     <div className={"flex-1 rounded-sm min-h-20 h-full relative"}>
       <LegendButton dimensions={dimensions}>
-        <VegaLite
+        <VegaChart
           spec={spec}
           actions={false}
           className={cn(

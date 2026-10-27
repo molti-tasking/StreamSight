@@ -1,5 +1,6 @@
 import { cn, deepMerge } from "@/lib/utils";
-import { VegaLite, type VisualizationSpec } from "react-vega";
+import type { VisualizationSpec } from "vega-embed";
+import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 import { ChartProps } from "./ChartProps";
 import { LegendButton } from "./LegendButton";
 import { useMemo } from "react";
@@ -124,7 +125,7 @@ export const VegaLiteChart = ({
   // live charts; memoize on the inputs that change.
   const spec = useMemo(() => {
     const dataSpec: Partial<VisualizationSpec> = {
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      $schema: VL_SCHEMA,
       width: "container",
       height: "container",
       background: "transparent",
@@ -175,7 +176,7 @@ export const VegaLiteChart = ({
       className={"flex-1 rounded-sm overflow-hidden min-h-20 h-full relative"}
     >
       <LegendButton dimensions={dimensions}>
-        <VegaLite
+        <VegaChart
           spec={spec}
           actions={false}
           style={{ cursor: "pointer" }}

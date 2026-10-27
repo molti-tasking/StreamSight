@@ -1,5 +1,6 @@
 import { useRawDataStore } from "@/store/useRawDataStore";
-import { VegaLite, type VisualizationSpec } from "react-vega";
+import type { VisualizationSpec } from "vega-embed";
+import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 
 export const MultiLineChart = () => {
   const dimensions = useRawDataStore((state) => state.dimensions);
@@ -9,7 +10,7 @@ export const MultiLineChart = () => {
     .filter((_, index) => index % 5 === 0);
 
   const spec: VisualizationSpec = {
-    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    $schema: VL_SCHEMA,
     width: "container",
     height: "container",
     data: {
@@ -93,6 +94,6 @@ export const MultiLineChart = () => {
   };
 
   return (
-    <VegaLite spec={spec} actions={false} className="container w-full mt-2" />
+    <VegaChart spec={spec} actions={false} className="container w-full mt-2" />
   );
 };

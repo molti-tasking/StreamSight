@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useRawDataStore } from "@/store/useRawDataStore";
-import { VegaLite, VisualizationSpec } from "react-vega";
+import type { VisualizationSpec } from "vega-embed";
+import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 
 export const BaselineChart = () => {
   const rawData = useRawDataStore((state) => state.values);
@@ -28,7 +29,7 @@ export const BaselineChart = () => {
   );
 
   const spec: VisualizationSpec = {
-    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    $schema: VL_SCHEMA,
     data: {
       values: [
         { x: 1, y: 2 }, // per Publication extracted data
@@ -139,7 +140,7 @@ export const BaselineChart = () => {
   };
   return (
     <div className="flex-1 flex flex-col gap-2 overflow-scroll">
-      <VegaLite
+      <VegaChart
         spec={spec}
         actions={false}
         style={{ cursor: "pointer" }}

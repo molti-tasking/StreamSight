@@ -4,7 +4,8 @@ import { useRawDataStore } from "@/store/useRawDataStore";
 import { useTemporalNavigationStore } from "@/store/useTemporalNavigationStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { useEffect, useMemo } from "react";
-import { VegaLite, type VisualizationSpec } from "react-vega";
+import type { VisualizationSpec } from "vega-embed";
+import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +53,7 @@ export const TimelineOverview = () => {
 
   const spec: VisualizationSpec = useMemo(
     () => ({
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      $schema: VL_SCHEMA,
       width: "container",
       height: 60,
       background: "transparent",
@@ -170,11 +171,11 @@ export const TimelineOverview = () => {
         </div>
       </div>
       {data.length > 1 ? (
-        <VegaLite
+        <VegaChart
           spec={spec}
           actions={false}
           className="w-full"
-          signalListeners={{
+          signals={{
             brush: (_name, value) => {
               const ext = (value as { timestamp?: [number, number] })?.timestamp;
               if (ext && ext.length === 2) setRange(ext[0], ext[1]);

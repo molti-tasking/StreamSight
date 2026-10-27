@@ -1,12 +1,13 @@
 import { useRawDataStore } from "@/store/useRawDataStore";
-import { VegaLite, type VisualizationSpec } from "react-vega";
+import type { VisualizationSpec } from "vega-embed";
+import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 
 export const AggregatedLineChart = () => {
   const dimensions = useRawDataStore((state) => state.dimensions);
   const values = useRawDataStore((state) => state.values);
 
   const spec: VisualizationSpec = {
-    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    $schema: VL_SCHEMA,
     width: "container",
     height: "container",
     data: {
@@ -104,6 +105,6 @@ export const AggregatedLineChart = () => {
   };
 
   return (
-    <VegaLite spec={spec} actions={false} className="container w-full mt-2" />
+    <VegaChart spec={spec} actions={false} className="container w-full mt-2" />
   );
 };

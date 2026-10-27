@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
-import { VegaLite, VisualizationSpec } from "react-vega";
+import type { VisualizationSpec } from "vega-embed";
+import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 import { colorForClusterId } from "../clusterColors";
 import { useMemo } from "react";
 
@@ -33,7 +34,7 @@ export const BaselineClusterChart = () => {
 
   const spec: VisualizationSpec = useMemo(
     () => ({
-      $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+      $schema: VL_SCHEMA,
       data: { values },
       title: "Baseline in %",
       width: "container",
@@ -115,7 +116,7 @@ export const BaselineClusterChart = () => {
 
   return (
     <div className="flex-1 flex flex-col gap-2 overflow-scroll">
-      <VegaLite
+      <VegaChart
         spec={spec}
         actions={true}
         // style={{ cursor: "pointer" }}
