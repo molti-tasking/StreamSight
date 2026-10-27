@@ -90,6 +90,27 @@ export const VegaLiteHighlightedChart = ({
       },
     };
   } else {
+    // Each layer folds only the streams it draws. (Folding all streams at
+    // the top level and the highlighted streams again inside a layer created
+    // rows x streams x highlighted-streams tuples on every update, which
+    // exhausted memory with ~200 streams.)
+    const yEncoding = (field: string) => ({
+      field,
+      type: "quantitative" as const,
+      title: null,
+      scale: { domain: yDomain },
+      axis: {
+        tickColor: { condition: { value: chartColor, test: "true" }, value: chartColor },
+        gridColor: chartColor,
+        gridOpacity: 0.1,
+        domainColor: chartColor,
+        labelPadding: -20,
+        labelOpacity: 0.5,
+        ticks: false,
+        domain: false,
+      },
+    });
+
     spec = {
       $schema: VL_SCHEMA,
 
@@ -104,184 +125,97 @@ export const VegaLiteHighlightedChart = ({
       },
 
       data: { values },
-      transform: [{ fold: dimensions, as: ["variable", "value"] }],
-
-      mark: "line",
       encoding: {
         x: {
           field: "timestamp",
           type: !!saveScreenSpace ? "ordinal" : "temporal",
-          axis: !!saveScreenSpace
-            ? { labelExpr: "" }
-            : {
-                // labelPadding: -20,
-                // ticks: false,
-                // domain: false,
-              },
-        },
-        y: {
-          field: "value",
-          type: "quantitative",
-          scale: { domain: yDomain },
+          title: null,
           axis: {
-            labelPadding: -20,
-            labelOpacity: 0.5,
-            ticks: false,
-            domain: false,
+            ...(saveScreenSpace ? { labelExpr: "" } : {}),
+            tickColor: { condition: { value: chartColor, test: "true" }, value: chartColor },
+            gridColor: chartColor,
+            gridOpacity: 0.1,
+            domainColor: chartColor,
           },
         },
-        color: { legend: null },
       },
-
       layer: [
+        // Envelope: min-max band across all streams of the cluster.
         {
           transform: [
-            ...(!!highlightInfo?.length
-              ? [
-                  {
-                    fold: highlightInfo?.map(({ dimension }) => dimension),
-                    as: ["variable", "column"] as [string, string],
-                  },
-                ]
-              : []),
-            { calculate: "toNumber(datum.value)", as: "value" },
-            { calculate: "toNumber(datum.timestamp)", as: "timestamp" },
-          ],
-          mark: { type: "line" },
-          encoding: {
-            x: { field: "timestamp", type: "temporal" },
-            y: { field: "column", type: "quantitative" },
-
-            color: {
-              field: "variable",
-              type: "ordinal",
-              condition: highlightInfo?.map(({ dimension, lastDimension }) => {
-                // We want to render the highlighted line in the color of the previous chart
-                const clusterColor =
-                  lastDimension !== undefined
-                    ? colorForClusterId(lastDimension)
-                    : "gray";
-                return {
-                  test: `datum.variable === '${escapeVegaString(dimension)}'`,
-                  value: clusterColor, // Use the color property from highlightInfo
-                };
-              }),
-            },
-
-            opacity: {
-              condition: highlightInfo?.map(({ dimension, opacity }) => ({
-                test: `datum.variable === '${escapeVegaString(dimension)}'`,
-                value: dimensions.length < 3 ? 1.0 : opacity,
-              })),
-              value: 0.3,
-            },
-          },
-        },
-        {
-          mark: { type: "area", color: chartColor, opacity: 0.3 },
-          encoding: {
-            x: {
-              field: "timestamp",
-              type: "temporal",
-              title: "",
-              axis: {
-                tickColor: {
-                  condition: { value: chartColor, test: "true" },
-                  value: chartColor,
-                },
-                gridColor: chartColor,
-                gridOpacity: 0.1,
-                domainColor: chartColor,
-              },
-            },
-            y: {
-              field: "min_value",
-              type: "quantitative",
-              title: "",
-              axis: {
-                tickColor: {
-                  condition: { value: chartColor, test: "true" },
-                  value: chartColor,
-                },
-                gridColor: chartColor,
-                gridOpacity: 0.1,
-                domainColor: chartColor,
-              },
-            },
-            y2: { field: "max_value" },
-          },
-          transform: [
-            {
-              calculate: "toNumber(datum.value)",
-              as: "value",
-            },
-            {
-              calculate: "toNumber(datum.timestamp)",
-              as: "timestamp",
-            },
+            { fold: dimensions, as: ["variable", "value"] },
             {
               aggregate: [
-                { op: "mean", field: "value", as: "mean_value" },
                 { op: "max", field: "value", as: "max_value" },
                 { op: "min", field: "value", as: "min_value" },
-                { op: "q1", field: "value", as: "q1_value" },
-                { op: "q3", field: "value", as: "q3_value" },
               ],
               groupby: ["timestamp"],
             },
-            {
-              fold: [
-                "mean_value",
-                "max_value",
-                "min_value",
-                "q1_value",
-                "q3_value",
-              ],
-              as: ["aggregation", "value"],
-            },
           ],
+          mark: { type: "area", color: chartColor, opacity: 0.3 },
+          encoding: {
+            y: yEncoding("min_value"),
+            y2: { field: "max_value" },
+          },
         },
 
-        ...selectedStreams?.flatMap((value) => {
-          const safeValue = escapeVegaString(value);
-          return [
+        // Streams that recently joined the cluster, drawn in the colour of
+        // the cluster they came from and fading out over the history depth.
+        ...(highlightInfo?.length
+          ? [
+              {
+                transform: [
+                  {
+                    fold: highlightInfo.map(({ dimension }) => dimension),
+                    as: ["variable", "value"] as [string, string],
+                  },
+                ],
+                mark: { type: "line" },
+                encoding: {
+                  y: yEncoding("value"),
+                  color: {
+                    field: "variable",
+                    type: "nominal",
+                    legend: null,
+                    condition: highlightInfo.map(({ dimension, lastDimension }) => ({
+                      test: `datum.variable === '${escapeVegaString(dimension)}'`,
+                      value:
+                        lastDimension !== undefined
+                          ? colorForClusterId(lastDimension)
+                          : "gray",
+                    })),
+                  },
+                  opacity: {
+                    condition: highlightInfo.map(({ dimension, opacity }) => ({
+                      test: `datum.variable === '${escapeVegaString(dimension)}'`,
+                      value: dimensions.length < 3 ? 1.0 : opacity,
+                    })),
+                    value: 0.3,
+                  },
+                },
+              } as UnitSpec<string>,
+            ]
+          : []),
+
+        // Streams selected in the cluster legend: black line plus label.
+        ...selectedStreams
+          .filter((value) => dimensions.includes(value))
+          .flatMap((value) => [
             {
-              mark: "line",
-              encoding: {
-                y: { field: "value", type: "quantitative" },
-                color: {
-                  field: "variable",
-                  type: "nominal",
-                  legend: null,
-                  condition: {
-                    test: `datum.variable === '${safeValue}'`,
-                    value: "black",
-                  },
-                },
-                opacity: {
-                  condition: {
-                    test: `datum.variable === '${safeValue}'`,
-                    value: 1,
-                  },
-                  value: 0,
-                },
-              },
+              transform: [{ fold: [value], as: ["variable", "value"] }],
+              mark: { type: "line", color: "black" },
+              encoding: { y: yEncoding("value") },
             } as UnitSpec<string>,
             {
+              transform: [{ fold: [value], as: ["variable", "value"] }],
               mark: { type: "text", align: "right", dy: -5 },
               encoding: {
                 x: { field: "timestamp", type: "temporal", aggregate: "max" },
-                y: {
-                  field: "value",
-                  type: "quantitative",
-                  aggregate: "max",
-                },
+                y: { field: "value", type: "quantitative", aggregate: "max" },
                 text: { value },
               },
-              transform: [{ filter: `datum.variable === '${safeValue}'` }],
             } as UnitSpec<string>,
-          ];
-        }),
+          ]),
 
         // Anomaly markers: dashed red rules at flagged timestamps, with the
         // auto-generated label as a tooltip.
@@ -301,15 +235,14 @@ export const VegaLiteHighlightedChart = ({
                   opacity: 0.8,
                 },
                 encoding: {
-                  x: { field: "timestamp", type: "temporal" },
                   tooltip: { field: "label", type: "nominal" },
                 },
               } as UnitSpec<string>,
             ]
           : []),
       ],
-      };
-    }
+    };
+  }
     return spec;
   }, [
     values,
