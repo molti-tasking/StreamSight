@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# yarn (classic) is the package manager; never commit an npm lockfile
+package-lock.json
