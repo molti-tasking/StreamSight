@@ -74,8 +74,9 @@ fn aggregator_internal(
             .cloned()
             .collect()
     } else {
+        // dataTicks 0 (or missing) means "all rows", not an empty window.
         match settings.data_ticks {
-            Some(ticks) if ticks < raw_data.len() => {
+            Some(ticks) if ticks > 0 && ticks < raw_data.len() => {
                 raw_data[raw_data.len() - ticks..].to_vec()
             }
             _ => raw_data.to_vec(),
@@ -92,12 +93,13 @@ fn aggregator_internal(
         .map(|(dimension, label)| (dimension.clone(), label as i64))
         .collect();
 
-    // Shared y-axis domain across all (non-timestamp) values in the window.
+    // Shared y-axis domain across all (non-timestamp) values in the window;
+    // [0, 1] when the window has no values (instead of [inf, -inf]).
     let mut y_min = f64::INFINITY;
     let mut y_max = f64::NEG_INFINITY;
     for entry in &data_to_be_clustered {
         for (key, value) in entry {
-            if key == "timestamp" {
+            if key == "timestamp" || !value.is_finite() {
                 continue;
             }
             if *value < y_min {
@@ -107,6 +109,11 @@ fn aggregator_internal(
                 y_max = *value;
             }
         }
+    }
+
+    if y_min > y_max {
+        y_min = 0.0;
+        y_max = 1.0;
     }
 
     AggregatedProps {

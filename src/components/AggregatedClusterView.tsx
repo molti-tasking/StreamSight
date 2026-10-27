@@ -3,6 +3,7 @@ import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSett
 import { useRawDataStore } from "@/store/useRawDataStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
+import { useTemporalNavigationStore } from "@/store/useTemporalNavigationStore";
 import { timeFormat } from "d3";
 import { useEffect, useMemo } from "react";
 import { colorForClusterId } from "./clusterColors";
@@ -17,7 +18,21 @@ export const AggregatedClusterView = () => {
   const animate = useStreamClustersSettingsStore(
     (state) => state.animateTransitions
   );
-  const clustersInTime = useViewModelStore((state) => state.clustersInTime);
+  const allClustersInTime = useViewModelStore((state) => state.clustersInTime);
+  // Focus view: when a range is selected on the timeline, show only it.
+  const navMode = useTemporalNavigationStore((s) => s.mode);
+  const rangeFrom = useTemporalNavigationStore((s) => s.from);
+  const rangeTo = useTemporalNavigationStore((s) => s.to);
+  const clustersInTime = useMemo(
+    () =>
+      navMode === "range" && rangeFrom !== undefined && rangeTo !== undefined
+        ? allClustersInTime.filter((c) => {
+            const t = Number(c.timestamp);
+            return t >= rangeFrom && t <= rangeTo;
+          })
+        : allClustersInTime,
+    [allClustersInTime, navMode, rangeFrom, rangeTo]
+  );
   const processClustersInTimeData = useViewModelStore(
     (state) => state.processClustersInTimeData
   );

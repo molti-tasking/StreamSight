@@ -23,6 +23,11 @@ import { useTemporalNavigationStore } from "./useTemporalNavigationStore";
 import { recordSample, recentComputeMs, timed } from "@/lib/bench/instrument";
 import { createAdaptiveThrottle } from "@/lib/bench/adaptiveThrottle";
 import { dataWrappingProcess } from "@/lib/wrapping";
+import {
+  buildClusteringSettings,
+  selectedRange,
+  selectWindow,
+} from "@/lib/clustering/clusteringSettings";
 import { DataProcessingSettings } from "@/lib/settings/DataProcessingSettings";
 
 interface DataStore {
@@ -92,20 +97,13 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       };
       // Multi-scale timelines: when the user has brushed/selected an explicit
       // range, cluster that time window instead of the latest N ticks.
-      const nav = useTemporalNavigationStore.getState();
-      const navTimeScale =
-        nav.mode === "range" && nav.from !== undefined && nav.to !== undefined
-          ? { from: nav.from, to: nav.to }
-          : undefined;
+      const clusteringSettings = buildClusteringSettings(
+        dataProcessingSettings,
+        selectedRange(useTemporalNavigationStore.getState())
+      );
 
       const { result: clustered, ms: computeMs } = await timed(() =>
-        getClusteringClient().aggregator(values, dimensions, {
-          eps: dataProcessingSettings.eps,
-          dataTicks: dataProcessingSettings.dataTicks,
-          minPts: dataProcessingSettings.minPts,
-          zNormalize: dataProcessingSettings.zNormalize,
-          timeScale: navTimeScale,
-        })
+        getClusteringClient().aggregator(values, dimensions, clusteringSettings)
       );
 
       // Derive stable cluster ids by matching this tick's clusters against the
@@ -147,18 +145,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         const overridden = new Map<string, number>(autoAssignment);
         for (const [dim, id] of Object.entries(pins)) overridden.set(dim, id);
 
-        const ticks = dataProcessingSettings.dataTicks;
-        const sanitized = sanitizeRows(values);
-        const window = navTimeScale
-          ? sanitized.filter((r) => {
-              const t = r["timestamp"];
-              return (
-                t !== undefined && t >= navTimeScale.from && t <= navTimeScale.to
-              );
-            })
-          : ticks && ticks < sanitized.length
-            ? sanitized.slice(-ticks)
-            : sanitized;
+        const window = sanitizeRows(selectWindow(values, clusteringSettings));
         const assembled = assembleClusters(window, dimensions, overridden);
         rawAggregated = assembled.aggregated;
         clusterIds = assembled.clusterIds;
@@ -189,8 +176,9 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         at: Date.now(),
         nStreams: dimensions.length,
         clusterCount,
-        dataTicks: dataProcessingSettings.dataTicks,
-        eps: dataProcessingSettings.eps,
+        dataTicks: clusteringSettings.dataTicks,
+        eps: clusteringSettings.eps,
+        minPts: clusteringSettings.minPts,
         computeMs,
       });
 
@@ -273,29 +261,18 @@ export const useViewModelStore = create<DataStore>((set, get) => {
       const dimensions = useRawDataStore.getState().dimensions;
       const values = useRawDataStore.getState().values;
 
-      const {
-        eps,
-        ignoreBoringDataMode,
-        dataTicks,
-        timeScale,
-        meanRange,
-        tickRange,
-        saveScreenSpace,
-      } = useClusterProcessingSettingsStore.getState();
-      const dataProcessingSettings: DataProcessingSettings = {
-        eps,
-        ignoreBoringDataMode,
-        dataTicks,
-        timeScale,
-        meanRange,
-        tickRange,
-        saveScreenSpace,
-      };
+      // Same clustering parameters as the live view (eps, minPts,
+      // z-normalization, window length). The selected range is not applied
+      // here: this series is the *context* for the timeline overview, and
+      // focus views filter it to the selected range themselves.
+      const clusteringSettings = buildClusteringSettings(
+        useClusterProcessingSettingsStore.getState()
+      );
 
       const { clustersInTime } = await getClusteringClient().clusteringOverTime(
         values,
         dimensions,
-        { eps: dataProcessingSettings.eps, dataTicks: dataProcessingSettings.dataTicks }
+        clusteringSettings
       );
 
       console.timeEnd(

@@ -53,11 +53,12 @@ export function computeYDomain(window: ClusterRow[]): [number, number] {
     for (const key in row) {
       if (key === TIMESTAMP_KEY) continue;
       const value = row[key];
+      if (!Number.isFinite(value)) continue;
       if (value < yMin) yMin = value;
       if (value > yMax) yMax = value;
     }
   }
-  return [yMin, yMax];
+  return yMin > yMax ? [0, 1] : [yMin, yMax];
 }
 
 /**

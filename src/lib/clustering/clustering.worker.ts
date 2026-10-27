@@ -10,6 +10,7 @@ import {
   ClusteringSettings,
   sanitizeRows,
 } from "./clusterTypes";
+import { DEFAULT_DATA_TICKS, selectWindow } from "./clusteringSettings";
 
 // Resolve the emitted `.wasm` asset to an absolute URL. wasm-bindgen's default
 // `init()` builds a root-relative path (`/_next/static/media/...wasm`) which
@@ -39,7 +40,8 @@ const clusteringApi = {
     settings: ClusteringSettings
   ): Promise<AggregatedProps> {
     await ensureReady();
-    const clean = sanitizeRows(rawData);
+    // Only the window is sent into WASM; Rust re-applies the same selection.
+    const clean = sanitizeRows(selectWindow(rawData, settings));
     return wasmAggregator(clean, dimensions, {
       eps: settings.eps,
       dataTicks: settings.dataTicks,
@@ -50,18 +52,18 @@ const clusteringApi = {
   },
 
   /**
-   * Cluster assignment over a sliding window for every timestamp. Port of the
-   * former `clusteringOverTime` server action; calls the WASM clustering per
-   * window (with `dataTicks` set to the window length so it is not re-sliced).
+   * Cluster assignment for every timestamp, each computed on the trailing
+   * `dataTicks` rows ending at that timestamp, with the same eps / minPts /
+   * z-normalization as the live view.
    */
   async clusteringOverTime(
     rawData: ClusterRow[],
     dimensions: string[],
-    settings: ClusteringSettings
+    settings: Omit<ClusteringSettings, "timeScale">
   ): Promise<{ clustersInTime: ClusterView[] }> {
     await ensureReady();
     const clean = sanitizeRows(rawData);
-    const contextWindow = settings.dataTicks || 20;
+    const contextWindow = settings.dataTicks || DEFAULT_DATA_TICKS;
     const clustersInTime: ClusterView[] = [];
 
     for (let i = 0; i < clean.length; i++) {
