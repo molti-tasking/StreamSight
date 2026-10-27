@@ -1,0 +1,10 @@
+{
+  "command": "node bench/sweep.mjs --mode eps --seeds 1,2,3,4,5 --meta bench/results-eps.meta.json",
+  "generatedAt": "2026-10-27T22:38:43.008Z",
+  "algoVersion": "dbscan-rms-z-3",
+  "node": "v22.23.2",
+  "platform": "darwin 27.0.0 arm64",
+  "cpu": "Apple M3 Pro",
+  "cpuCount": 12,
+  "memoryGB": 18
+}

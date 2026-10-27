@@ -15,6 +15,7 @@ import {
   dataProcessingSettingsSchema,
 } from "@/lib/settings/DataProcessingSettings";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
+import { useRawDataStore } from "@/store/useRawDataStore";
 import {
   correlationForEps,
   defaultEps,
@@ -73,7 +74,8 @@ export const DataProcessingSettingsForm = ({
                       const next = checked === true;
                       field.onChange(next);
                       // eps means something different in each mode.
-                      form.setValue("eps", defaultEps(next));
+                      const { values, dimensions } = useRawDataStore.getState();
+                      form.setValue("eps", defaultEps(next, values.slice(-(form.getValues("dataTicks") || 50)), dimensions));
                     }}
                   />
                 </FormControl>
@@ -119,7 +121,12 @@ export const DataProcessingSettingsForm = ({
                       </>
                     )}
                     {zNormalize === false && (
-                      <> Without normalization eps is in the data&apos;s units.</>
+                      <>
+                        {" "}
+                        Without normalization eps is in the data&apos;s units;
+                        the default is 0.6 × the median stream standard
+                        deviation in the window.
+                      </>
                     )}
                   </FormDescription>
                   <FormMessage />

@@ -19,8 +19,6 @@ export type DataSetInfo = {
   timeAxis: "relative" | "absolute";
   /** Whether the data is a real-time stream (GDP is yearly, not streaming). */
   streaming: boolean;
-  /** A starting eps for raw (non-normalized) clustering, in data units. */
-  rawEps: number;
 };
 
 export const dataSets: Record<DataSet, DataSetInfo> = {
@@ -35,7 +33,6 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
     playbackIntervalMs: 131.072,
     timeAxis: "relative",
     streaming: true,
-    rawEps: 1,
   },
   "S&P500": {
     label: "S&P 500",
@@ -45,7 +42,6 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
     playbackIntervalMs: 1000,
     timeAxis: "absolute",
     streaming: true,
-    rawEps: 20,
   },
   GDP: {
     label: "GDP (non-streaming demo)",
@@ -56,7 +52,6 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
     playbackIntervalMs: 1000,
     timeAxis: "absolute",
     streaming: false,
-    rawEps: 100000,
   },
 };
 
