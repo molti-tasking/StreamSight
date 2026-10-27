@@ -196,3 +196,154 @@ pub fn dbscan(distances: &Distances, eps: f64, min_pts: usize) -> Vec<i32> {
     }
     labels
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Small deterministic PRNG (xorshift64*) so tests need no extra crates.
+    struct Rng(u64);
+    impl Rng {
+        fn next_f64(&mut self) -> f64 {
+            self.0 ^= self.0 >> 12;
+            self.0 ^= self.0 << 25;
+            self.0 ^= self.0 >> 27;
+            (self.0.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 11) as f64 / (1u64 << 53) as f64
+        }
+    }
+
+    fn random_series(rng: &mut Rng, n: usize, missing: f64) -> Vec<f64> {
+        (0..n)
+            .map(|_| {
+                if rng.next_f64() < missing {
+                    f64::NAN
+                } else {
+                    rng.next_f64() * 10.0 - 5.0
+                }
+            })
+            .collect()
+    }
+
+    fn labels(rows: &[Vec<f64>], eps: f64, min_pts: usize, normalize: bool) -> Vec<i32> {
+        let n_ticks = rows[0].len();
+        let mut m = SeriesMatrix::new(rows.len(), n_ticks, rows.concat());
+        if normalize {
+            z_normalize(&mut m);
+        }
+        dbscan(&Distances::new(&m), eps, min_pts)
+    }
+
+    #[test]
+    fn distance_is_symmetric_with_missing_values() {
+        let mut rng = Rng(42);
+        for _ in 0..500 {
+            let a = random_series(&mut rng, 30, 0.3);
+            let b = random_series(&mut rng, 30, 0.3);
+            let ab = rms_distance(&a, &b, 1);
+            let ba = rms_distance(&b, &a, 1);
+            assert!(ab == ba || (ab.is_infinite() && ba.is_infinite()), "{ab} != {ba}");
+        }
+    }
+
+    #[test]
+    fn missing_values_are_skipped_not_zero_filled() {
+        // Only ticks 0 and 2 are shared; there the series agree exactly.
+        let a = [1.0, f64::NAN, 3.0];
+        let b = [1.0, 100.0, 3.0];
+        assert_eq!(rms_distance(&a, &b, 1), 0.0);
+        // Zero-filling would have made these far apart.
+        let c = [5.0, f64::NAN, 5.0, f64::NAN];
+        let d = [5.0, 5.0, 5.0, 5.0];
+        assert_eq!(rms_distance(&c, &d, 2), 0.0);
+    }
+
+    #[test]
+    fn too_little_overlap_is_infinitely_far() {
+        let a = [1.0, f64::NAN, f64::NAN, f64::NAN];
+        let b = [f64::NAN, f64::NAN, 1.0, f64::NAN];
+        assert!(rms_distance(&a, &b, 1).is_infinite());
+        // Shared ticks below the minimum overlap (half of 4 ticks = 2).
+        let c = [1.0, 2.0, f64::NAN, f64::NAN];
+        let e = [1.0, f64::NAN, f64::NAN, 4.0];
+        assert!(rms_distance(&c, &e, min_overlap(4)).is_infinite());
+        assert_eq!(min_overlap(4), 2);
+        assert_eq!(min_overlap(5), 3);
+        assert_eq!(min_overlap(0), 1);
+    }
+
+    #[test]
+    fn distance_does_not_grow_with_window_length() {
+        let short = rms_distance(&[0.0; 4], &[1.0; 4], 1);
+        let long = rms_distance(&[0.0; 400], &[1.0; 400], 1);
+        assert_eq!(short, 1.0);
+        assert_eq!(long, 1.0);
+    }
+
+    #[test]
+    fn z_normalized_distance_equals_sqrt_two_one_minus_r() {
+        let mut rng = Rng(7);
+        for _ in 0..200 {
+            let a = random_series(&mut rng, 50, 0.0);
+            let b = random_series(&mut rng, 50, 0.0);
+            let mut m = SeriesMatrix::new(2, 50, [a.clone(), b.clone()].concat());
+            z_normalize(&mut m);
+            let d = rms_distance(m.series(0), m.series(1), 1);
+
+            let mean = |x: &[f64]| x.iter().sum::<f64>() / x.len() as f64;
+            let (ma, mb) = (mean(&a), mean(&b));
+            let cov: f64 = a.iter().zip(&b).map(|(x, y)| (x - ma) * (y - mb)).sum();
+            let va: f64 = a.iter().map(|x| (x - ma).powi(2)).sum();
+            let vb: f64 = b.iter().map(|y| (y - mb).powi(2)).sum();
+            let r = cov / (va * vb).sqrt();
+            assert!((d * d - 2.0 * (1.0 - r)).abs() < 1e-12, "d^2={} 2(1-r)={}", d * d, 2.0 * (1.0 - r));
+        }
+    }
+
+    #[test]
+    fn z_normalization_removes_shift_and_scale() {
+        let a: Vec<f64> = (0..20).map(|i| (i as f64 * 0.7).sin()).collect();
+        let b: Vec<f64> = a.iter().map(|x| 3.0 * x + 7.0).collect();
+        let mut m = SeriesMatrix::new(2, 20, [a, b].concat());
+        z_normalize(&mut m);
+        assert!(rms_distance(m.series(0), m.series(1), 1) < 1e-12);
+    }
+
+    #[test]
+    fn constant_series_is_centred_and_missing_stays_missing() {
+        let mut m = SeriesMatrix::new(1, 4, vec![2.5, f64::NAN, 2.5, 2.5]);
+        z_normalize(&mut m);
+        assert_eq!(m.values[0], 0.0);
+        assert!(m.values[1].is_nan());
+        assert_eq!(m.values[3], 0.0);
+    }
+
+    #[test]
+    fn dbscan_labels_core_border_and_noise() {
+        // 1-tick "series" make distances plain absolute differences. With
+        // eps 0.6 and minPts 3, 0.5 and 1.0 are core points (two neighbours
+        // each); 0.0 and 1.5 have one neighbour, so they are border points of
+        // that cluster (0.0 is first marked noise, then claimed); 10.0 is noise.
+        let rows: Vec<Vec<f64>> = [0.0, 0.5, 1.0, 1.5, 10.0].iter().map(|v| vec![*v]).collect();
+        assert_eq!(labels(&rows, 0.6, 3, false), vec![0, 0, 0, 0, NOISE]);
+        // minPts 1: every point is core, so 10.0 forms its own cluster.
+        assert_eq!(labels(&rows, 0.6, 1, false), vec![0, 0, 0, 0, 1]);
+        // Two separated groups, numbered in order of discovery.
+        let rows: Vec<Vec<f64>> = [5.0, 0.0, 5.1, 0.1].iter().map(|v| vec![*v]).collect();
+        assert_eq!(labels(&rows, 0.2, 2, false), vec![0, 1, 0, 1]);
+    }
+
+    #[test]
+    fn matrix_and_on_demand_distances_agree() {
+        let mut rng = Rng(3);
+        let rows: Vec<Vec<f64>> = (0..12).map(|_| random_series(&mut rng, 16, 0.2)).collect();
+        let m = SeriesMatrix::new(12, 16, rows.concat());
+        let cached = Distances::new(&m);
+        for i in 0..12 {
+            for j in 0..12 {
+                let direct = if i == j { 0.0 } else { rms_distance(m.series(i), m.series(j), min_overlap(16)) };
+                let got = cached.get(i, j);
+                assert!(got == direct || (got.is_infinite() && direct.is_infinite()));
+            }
+        }
+    }
+}

@@ -1,24 +1,6 @@
 import { expect, test } from "vitest";
-import { createRequire } from "node:module";
+import { aggregate } from "./wasmNode";
 
-// DBSCAN noise labelling: streams that are neither core points nor
-// density-reachable from one get cluster index -1. These streams are almost
-// flat, so the tests compare raw values (zNormalize: false); z-normalization
-// would stretch the tiny wiggles to unit variance.
-const require = createRequire(import.meta.url);
-const wasm = require(
-  "../../../backend/rust_wasm_module/pkg-node/rust_wasm_module.js"
-) as {
-  aggregator: (
-    rawData: unknown,
-    dimensions: unknown,
-    settings: unknown
-  ) => {
-    aggregated: Record<string, number>[][];
-    yDomain: [number, number];
-    clusterAssignment: [string, number][];
-  };
-};
 
 // Three tightly-grouped streams (A, B, C) and one far-away outlier (D).
 const dimensions = ["A", "B", "C", "D"];
@@ -29,7 +11,7 @@ const inputValues = [
 ];
 
 test("minPts path labels a lone stream as noise (-1)", () => {
-  const result = wasm.aggregator(inputValues, dimensions, {
+  const result = aggregate(inputValues, dimensions, {
     eps: 5,
     dataTicks: 3,
     minPts: 3,
@@ -48,7 +30,7 @@ test("minPts path labels a lone stream as noise (-1)", () => {
 });
 
 test("omitted minPts defaults to 2: an isolated stream is still noise", () => {
-  const result = wasm.aggregator(inputValues, dimensions, {
+  const result = aggregate(inputValues, dimensions, {
     eps: 5,
     dataTicks: 3,
     zNormalize: false,
@@ -61,7 +43,7 @@ test("omitted minPts defaults to 2: an isolated stream is still noise", () => {
 });
 
 test("minPts larger than any neighbourhood makes every stream noise", () => {
-  const result = wasm.aggregator(inputValues, dimensions, {
+  const result = aggregate(inputValues, dimensions, {
     eps: 5,
     dataTicks: 3,
     minPts: 5,

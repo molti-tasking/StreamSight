@@ -1,35 +1,19 @@
 import { expect, test } from "vitest";
-import { createRequire } from "node:module";
+import { aggregate } from "./wasmNode";
 import {
   inputValues,
   dimensions,
   settings,
 } from "../../app/actions/__fixtures__/clusteringGolden";
 import { assembleClusters, OUTLIER_ID } from "./assembleClusters";
-import type { ClusterRow } from "./clusterTypes";
 
-// Same WASM handle the golden test uses (pkg-node target for Node/vitest).
-const require = createRequire(import.meta.url);
-const wasm = require(
-  "../../../backend/rust_wasm_module/pkg-node/rust_wasm_module.js"
-) as {
-  aggregator: (
-    rawData: unknown,
-    dimensions: unknown,
-    settings: unknown
-  ) => {
-    aggregated: ClusterRow[][];
-    yDomain: [number, number];
-    clusterAssignment: [string, number][];
-  };
-};
 
 // The WASM aggregator slices to the most recent `dataTicks` rows internally;
 // the JS assembly works on an already-windowed slice, so replicate that here.
 const window = inputValues.slice(-settings.dataTicks);
 
 test("assembleClusters reproduces the WASM clusters and appends noise as Outliers", () => {
-  const wasmResult = wasm.aggregator(inputValues, dimensions, settings);
+  const wasmResult = aggregate(inputValues, dimensions, settings);
   const assignment = new Map<string, number>(wasmResult.clusterAssignment);
   const assembled = assembleClusters(window, dimensions, assignment);
   const clusterCount = wasmResult.aggregated.length;
@@ -52,7 +36,7 @@ test("assembleClusters reproduces the WASM clusters and appends noise as Outlier
 });
 
 test("clusterIds are index-aligned with the assembled clusters", () => {
-  const wasmResult = wasm.aggregator(inputValues, dimensions, settings);
+  const wasmResult = aggregate(inputValues, dimensions, settings);
   const assignment = new Map<string, number>(wasmResult.clusterAssignment);
   const assembled = assembleClusters(window, dimensions, assignment);
 

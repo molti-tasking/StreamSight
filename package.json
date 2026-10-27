@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:rust": "cargo test --manifest-path backend/rust_wasm_module/Cargo.toml",
     "build:wasm": "cd backend/rust_wasm_module && wasm-pack build --release --target web --out-dir pkg && wasm-pack build --release --target nodejs --out-dir pkg-node",
     "bench:compute": "node bench/sweep.mjs"
   },
