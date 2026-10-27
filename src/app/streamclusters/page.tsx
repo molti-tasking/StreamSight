@@ -19,7 +19,7 @@ import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSetting
 import { useViewModelStore } from "@/store/useViewModelStore";
 import Link from "next/link";
 import { useEffect } from "react";
-import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import { ErrorBoundary, FallbackProps, getErrorMessage } from "react-error-boundary";
 
 export default function StreamClustersPage() {
   const aggregated = useViewModelStore((store) => store.aggregated);
@@ -123,7 +123,7 @@ const ResetErrorBoundary = ({ resetErrorBoundary, error }: FallbackProps) => {
   return (
     <div>
       <p>⚠️Something went wrong building the cluster map</p>
-      <pre>{JSON.stringify(error, null, 2)}</pre>
+      <pre>{getErrorMessage(error) ?? String(error)}</pre>
       <Button onClick={resetErrorBoundary}>Reset Error</Button>
     </div>
   );

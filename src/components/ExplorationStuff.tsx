@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useExploratoryStore } from "@/store/useExploratoryStore";
-import { Loader2, MountainIcon, StarsIcon } from "lucide-react";
+import { LoaderCircle, MountainIcon, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 export const ExplorationStuff = () => {
@@ -33,7 +33,7 @@ export const ExplorationStuff = () => {
   return (
     <Dialog>
       <DialogTrigger>
-        <StarsIcon className="cursor-pointer text-primary" />
+        <Sparkles className="cursor-pointer text-primary" />
       </DialogTrigger>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
@@ -51,7 +51,7 @@ export const ExplorationStuff = () => {
         {suggestion && (
           <div className="py-2">
             <strong className="flex items-center gap-2 mb-2">
-              AI Suggestion <StarsIcon />
+              AI Suggestion <Sparkles />
             </strong>
 
             <div className="bg-blue-100 rounded-md p-4">
@@ -76,9 +76,9 @@ export const ExplorationStuff = () => {
             onClick={onRequest}
           >
             {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <StarsIcon className="mr-2" />
+              <Sparkles className="mr-2" />
             )}
             Generate Hypothesis
           </Button>

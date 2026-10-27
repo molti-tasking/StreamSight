@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { CheckIcon, Loader2 } from "lucide-react";
+import { CheckIcon, LoaderCircle } from "lucide-react";
 import { useFormState } from "react-hook-form";
 import { Button, ButtonProps } from "./ui/button";
 
@@ -37,7 +37,7 @@ export const FormSubmitButton = ({
     >
       {!!isSubmitting ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
           {loadingText ?? "...loading"}
         </>
       ) : (

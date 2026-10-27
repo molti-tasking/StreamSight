@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSettingsStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
-import { AlertCircleIcon } from "lucide-react";
+import { CircleAlertIcon } from "lucide-react";
 import { memo } from "react";
 import { PlotlyChart } from "./charts/PlotlyChart";
 import { colorForClusterId } from "./clusterColors";
@@ -87,7 +87,7 @@ const Charts = memo(() => {
             />
           ))}
           <div className="bg-orange-400 p-4 mt-2 rounded-md flex flex-row items-center gap-4 text-white">
-            <AlertCircleIcon />
+            <CircleAlertIcon />
             <span>
               There are {aggregated.length - plotlyMaxNumberOfPlots} more
               clusters, that are not shown.
