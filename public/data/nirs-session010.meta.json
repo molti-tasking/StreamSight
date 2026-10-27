@@ -1,0 +1,83 @@
+{
+  "name": "NIRS session010 (ΔHbO)",
+  "description": "fNIRS recording (NIRx Aurora, 210 source-detector channels), oxygenated-haemoglobin change per channel relative to the first 60 s. Identifiers removed; time is relative to the recording start.",
+  "unit": "µM (ΔHbO, assuming L·DPF below)",
+  "samplingRateHz": 7.62939453125,
+  "intervalMs": 131.072,
+  "samples": 20924,
+  "channels": 210,
+  "missingValues": 0,
+  "conversion": {
+    "method": "modified Beer-Lambert law",
+    "wavelengthsNm": [
+      760,
+      850
+    ],
+    "extinctionCoefficients": {
+      "unit": "cm^-1/M (decadic)",
+      "source": "Prahl, omlc.org/spectra/hemoglobin/summary.html",
+      "values": {
+        "760": {
+          "hbo": 586,
+          "hbr": 1548.52
+        },
+        "850": {
+          "hbo": 1058,
+          "hbr": 691.32
+        }
+      }
+    },
+    "pathLengthCm": 3,
+    "pathLengthNote": "nominal; this session records no probe geometry",
+    "dpf": 6,
+    "baselineSeconds": 60,
+    "significantDigits": 4
+  },
+  "events": [
+    {
+      "code": "49",
+      "onsetMs": 1883242,
+      "durationMs": 10000
+    },
+    {
+      "code": "50",
+      "onsetMs": 1893204,
+      "durationMs": 10000
+    },
+    {
+      "code": "51",
+      "onsetMs": 1913258,
+      "durationMs": 10000
+    },
+    {
+      "code": "49",
+      "onsetMs": 1923613,
+      "durationMs": 10000
+    },
+    {
+      "code": "50",
+      "onsetMs": 1933574,
+      "durationMs": 10000
+    },
+    {
+      "code": "51",
+      "onsetMs": 1953628,
+      "durationMs": 10000
+    },
+    {
+      "code": "49",
+      "onsetMs": 2232943,
+      "durationMs": 10000
+    },
+    {
+      "code": "50",
+      "onsetMs": 2243035,
+      "durationMs": 10000
+    },
+    {
+      "code": "51",
+      "onsetMs": 2262958,
+      "durationMs": 10000
+    }
+  ]
+}

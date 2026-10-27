@@ -1,35 +1,81 @@
-// import jsonDataSP500 from "public/data/20250228_stock_sp500_data.json";
-// import jsonDataGDP from "public/data/20250228_un_gdp_data.json";
+export type DataSet = "NIRS" | "S&P500" | "GDP";
 
-export type DataSet = "S&P500" | "GDP";
-// const dataSources: Record<DataSet, string> = {
-//   "S&P500": jsonDataSP500,
-//   GDP: jsonDataGDP,
-// };
-
-const dataSourceUrls: Record<DataSet, string> = {
-  "S&P500": "/data/20250228_stock_sp500_data.json",
-  GDP: "/data/20250228_un_gdp_data.json",
+export type DataSetInfo = {
+  label: string;
+  description: string;
+  url: string;
+  /** The file is gzip-compressed JSON (decompressed in the browser). */
+  gzip?: boolean;
+  /** Companion metadata (units, conversion, reference events). */
+  metaUrl?: string;
+  /** Time between samples in the source data, in ms (for native playback). */
+  nativeIntervalMs: number;
+  /** "relative": timestamps are ms since the recording started. */
+  timeAxis: "relative" | "absolute";
+  /** Whether the data is a real-time stream (GDP is yearly, not streaming). */
+  streaming: boolean;
+  /** A starting eps for raw (non-normalized) clustering, in data units. */
+  rawEps: number;
 };
 
-async function fetchDataSet(dataSet: DataSet) {
-  const res = await fetch(dataSourceUrls[dataSet]);
-  return res.json();
-}
+export const dataSets: Record<DataSet, DataSetInfo> = {
+  NIRS: {
+    label: "NIRS blood oxygenation (case study)",
+    description:
+      "210 fNIRS channels, oxygenated-haemoglobin change (ΔHbO, µM) at 7.63 Hz over 45.7 minutes, with 9 recorded stimulus markers. De-identified.",
+    url: "/data/nirs-session010-hbo.json.gz",
+    gzip: true,
+    metaUrl: "/data/nirs-session010.meta.json",
+    nativeIntervalMs: 131.072,
+    timeAxis: "relative",
+    streaming: true,
+    rawEps: 1,
+  },
+  "S&P500": {
+    label: "S&P 500",
+    description: "500 parallel time series of S&P 500 stock values on a daily basis.",
+    url: "/data/20250228_stock_sp500_data.json",
+    nativeIntervalMs: 24 * 3600 * 1000,
+    timeAxis: "absolute",
+    streaming: true,
+    rawEps: 20,
+  },
+  GDP: {
+    label: "GDP (non-streaming demo)",
+    description:
+      "212 countries' yearly GDP, 1970–2022. Yearly data is not a real-time stream; included only as a small demo.",
+    url: "/data/20250228_un_gdp_data.json",
+    nativeIntervalMs: 365 * 24 * 3600 * 1000,
+    timeAxis: "absolute",
+    streaming: false,
+    rawEps: 100000,
+  },
+};
 
-const minTimeout = 2000;
-
-type DataEntry = {
+export type DataEntry = {
   timestamp: number;
   [x: string]: number | null;
 };
 
+export async function fetchDataSet(dataSet: DataSet): Promise<DataEntry[]> {
+  const info = dataSets[dataSet];
+  const res = await fetch(info.url);
+  if (!res.ok || !res.body) throw new Error(`Could not load ${info.url}: ${res.status}`);
+  if (!info.gzip) return res.json();
+  const text = await new Response(
+    res.body.pipeThrough(new DecompressionStream("gzip"))
+  ).text();
+  return JSON.parse(text);
+}
+
+const minTimeout = 2000;
+
 export async function* streamDataSet(
   dataSet: DataSet
 ): AsyncGenerator<DataEntry> {
-  const dataEntries: DataEntry[] = await fetchDataSet(dataSet);
+  const dataEntries = await fetchDataSet(dataSet);
 
-  console.log("Stream of data set. Entries count: ", dataSet.length);
+  console.log("Stream of data set. Entries count: ", dataEntries.length);
 
   for (const item of dataEntries) {
     yield new Promise<DataEntry>((resolve) => {

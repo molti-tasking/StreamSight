@@ -24,9 +24,10 @@ import { FormSubmitButton } from "../FormSubmitButton";
 import { Input } from "../ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { dataSets } from "@/data/streamDataSet";
 
 const formSchema = z.object({
-  dataSet: z.enum(["S&P500", "GDP", "peak-simulation"]),
+  dataSet: z.enum(["NIRS", "S&P500", "GDP", "peak-simulation"]),
   peakSimulation: z.object({
     rows: z.coerce.number<number>(),
     columns: z.coerce.number<number>(),
@@ -53,7 +54,7 @@ export const DataSetForm = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      dataSet: "GDP",
+      dataSet: "NIRS",
       peakSimulation:
         values.length && dimensions.length
           ? {
@@ -116,24 +117,14 @@ export const DataSetForm = () => {
           name="dataSet"
           render={({ field }) => (
             <div className="flex flex-col gap-4">
-              <Card {...getCardProps("GDP", field)}>
-                <CardHeader>
-                  <CardTitle>GDP Streaming</CardTitle>
-                  <CardDescription>
-                    212 parallel time series will be streamed from 1970 until
-                    2022
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-              <Card {...getCardProps("S&P500", field)}>
-                <CardHeader>
-                  <CardTitle>S&P 500 Streaming</CardTitle>
-                  <CardDescription>
-                    500 parallel time series of S&P 500 stock values on a daily
-                    basis
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+              {(["NIRS", "S&P500"] as const).map((key) => (
+                <Card key={key} {...getCardProps(key, field)}>
+                  <CardHeader>
+                    <CardTitle>{dataSets[key].label}</CardTitle>
+                    <CardDescription>{dataSets[key].description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
               <Card {...getCardProps("peak-simulation", field)}>
                 <CardHeader>
                   <CardTitle>Peaking Data Simulation</CardTitle>
@@ -207,6 +198,16 @@ export const DataSetForm = () => {
                     )}
                   />
                 </CardContent>
+              </Card>
+
+              <p className="text-xs text-muted-foreground mt-2">
+                Non-streaming demo data
+              </p>
+              <Card {...getCardProps("GDP", field)}>
+                <CardHeader>
+                  <CardTitle>{dataSets.GDP.label}</CardTitle>
+                  <CardDescription>{dataSets.GDP.description}</CardDescription>
+                </CardHeader>
               </Card>
 
               <FormMessage />

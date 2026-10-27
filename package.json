@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:rust": "cargo test --manifest-path backend/rust_wasm_module/Cargo.toml",
     "build:wasm": "cd backend/rust_wasm_module && wasm-pack build --release --target web --out-dir pkg && wasm-pack build --release --target nodejs --out-dir pkg-node",
-    "bench:compute": "node bench/sweep.mjs"
+    "bench:compute": "node bench/sweep.mjs",
+    "convert:nirs": "node scripts/convert-nirs.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^6.0.1",
@@ -60,6 +61,7 @@
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.3",
+    "h5wasm": "^0.8",
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.6.14",
