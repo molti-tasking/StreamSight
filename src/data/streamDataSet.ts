@@ -8,8 +8,13 @@ export type DataSetInfo = {
   gzip?: boolean;
   /** Companion metadata (units, conversion, reference events). */
   metaUrl?: string;
-  /** Time between samples in the source data, in ms (for native playback). */
+  /** Time between samples in the source data, in ms. */
   nativeIntervalMs: number;
+  /**
+   * Time between rows at "native" playback speed, in ms: the sampling
+   * interval for real streams; a 1 row/s replay for daily or yearly data.
+   */
+  playbackIntervalMs: number;
   /** "relative": timestamps are ms since the recording started. */
   timeAxis: "relative" | "absolute";
   /** Whether the data is a real-time stream (GDP is yearly, not streaming). */
@@ -27,6 +32,7 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
     gzip: true,
     metaUrl: "/data/nirs-session010.meta.json",
     nativeIntervalMs: 131.072,
+    playbackIntervalMs: 131.072,
     timeAxis: "relative",
     streaming: true,
     rawEps: 1,
@@ -36,6 +42,7 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
     description: "500 parallel time series of S&P 500 stock values on a daily basis.",
     url: "/data/20250228_stock_sp500_data.json",
     nativeIntervalMs: 24 * 3600 * 1000,
+    playbackIntervalMs: 1000,
     timeAxis: "absolute",
     streaming: true,
     rawEps: 20,
@@ -46,6 +53,7 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
       "212 countries' yearly GDP, 1970–2022. Yearly data is not a real-time stream; included only as a small demo.",
     url: "/data/20250228_un_gdp_data.json",
     nativeIntervalMs: 365 * 24 * 3600 * 1000,
+    playbackIntervalMs: 1000,
     timeAxis: "absolute",
     streaming: false,
     rawEps: 100000,
@@ -66,28 +74,4 @@ export async function fetchDataSet(dataSet: DataSet): Promise<DataEntry[]> {
     res.body.pipeThrough(new DecompressionStream("gzip"))
   ).text();
   return JSON.parse(text);
-}
-
-const minTimeout = 2000;
-
-export async function* streamDataSet(
-  dataSet: DataSet
-): AsyncGenerator<DataEntry> {
-  const dataEntries = await fetchDataSet(dataSet);
-
-  console.log("Stream of data set. Entries count: ", dataEntries.length);
-
-  for (const item of dataEntries) {
-    yield new Promise<DataEntry>((resolve) => {
-      safeRequestIdleCallback(() => resolve(item), minTimeout);
-    });
-  }
-}
-
-function safeRequestIdleCallback(callback: () => void, minTimeout = 3000) {
-  if ("requestIdleCallback" in window) {
-    return setTimeout(() => requestIdleCallback(callback), minTimeout);
-  } else {
-    return setTimeout(callback, minTimeout);
-  }
 }

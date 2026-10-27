@@ -10,6 +10,7 @@ import { ClusterLegend } from "@/components/ClusterLegend";
 import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingSettingsDialog";
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import { TimelineOverview } from "@/components/TimelineOverview";
+import { PlaybackControls } from "@/components/PlaybackControls";
 import { TreemapLayout } from "@/components/TreemapLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,7 @@ export default function StreamClustersPage() {
                 Stream Sight
               </span>
             </Link>
-            {/* <ExplorationStuff /> */}
+            <PlaybackControls />
           </div>
           <div className="flex flex-row justify-end gap-2 items-center my-1">
             <div className="text-muted-foreground">

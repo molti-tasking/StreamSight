@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
-import { useRawDataStore } from "@/store/useRawDataStore";
+import { usePlaybackStore } from "@/store/usePlaybackStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRightIcon } from "lucide-react";
 import { ControllerRenderProps, useForm } from "react-hook-form";
@@ -27,42 +27,58 @@ import { useRouter } from "next/navigation";
 import { dataSets } from "@/data/streamDataSet";
 
 const formSchema = z.object({
-  dataSet: z.enum(["NIRS", "S&P500", "GDP", "peak-simulation"]),
-  peakSimulation: z.object({
-    rows: z.coerce.number<number>(),
-    columns: z.coerce.number<number>(),
-    streamingInterval: z.coerce.number<number>(),
+  dataSet: z.enum(["NIRS", "S&P500", "GDP", "synthetic"]),
+  synthetic: z.object({
+    seed: z.coerce.number<number>().int(),
+    nStreams: z.coerce.number<number>().int().min(1),
+    nClusters: z.coerce.number<number>().int().min(1),
+    nTicks: z.coerce.number<number>().int().min(2),
+    membershipSwitches: z.coerce.number<number>().int().min(0),
+    anomalies: z.coerce.number<number>().int().min(0),
+    intervalMs: z.coerce.number<number>().positive(),
   }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const initialSimulationData = {
-  rows: 20,
-  columns: 80,
-  streamingInterval: 3000,
+/** Defaults for the seeded synthetic stream (one hour at 1 row/s). */
+export const defaultSyntheticConfig: FormValues["synthetic"] = {
+  seed: 1,
+  nStreams: 80,
+  nClusters: 5,
+  nTicks: 3600,
+  membershipSwitches: 8,
+  anomalies: 12,
+  intervalMs: 1000,
 };
+
+const syntheticFields: {
+  name: keyof FormValues["synthetic"];
+  label: string;
+  description: string;
+}[] = [
+  { name: "seed", label: "Seed", description: "Same seed and settings, same data." },
+  { name: "nStreams", label: "Streams", description: "Number of parallel time series." },
+  { name: "nClusters", label: "Clusters", description: "Planted ground-truth clusters." },
+  { name: "nTicks", label: "Length (rows)", description: "Total rows in the stream." },
+  {
+    name: "membershipSwitches",
+    label: "Membership switches",
+    description: "Streams that move to another cluster at a known time.",
+  },
+  { name: "anomalies", label: "Anomalies", description: "Injected spikes, drops and level shifts." },
+  { name: "intervalMs", label: "Interval (ms)", description: "Time between rows at native speed." },
+];
 
 export const DataSetForm = () => {
   const router = useRouter();
-  const dimensions = useRawDataStore((state) => state.dimensions);
-  const values = useRawDataStore((state) => state.values);
-  const streamingInterval = useRawDataStore((state) => state.streamingInterval);
-  const updateData = useRawDataStore((state) => state.updateData);
-  const loadDataset = useRawDataStore((state) => state.loadDataset);
+  const load = usePlaybackStore((state) => state.load);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       dataSet: "NIRS",
-      peakSimulation:
-        values.length && dimensions.length
-          ? {
-              rows: values.length,
-              columns: dimensions.length + 1,
-              streamingInterval: streamingInterval ?? 0,
-            }
-          : initialSimulationData,
+      synthetic: defaultSyntheticConfig,
     },
   });
 
@@ -89,16 +105,11 @@ export const DataSetForm = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
-    if (data.dataSet === "peak-simulation") {
-      updateData(
-        "peaks",
-        data.peakSimulation.columns,
-        data.peakSimulation.rows,
-        data.peakSimulation.streamingInterval
-      );
-    } else {
-      loadDataset(data.dataSet);
-    }
+    void load(
+      data.dataSet === "synthetic"
+        ? { kind: "synthetic", config: data.synthetic }
+        : { kind: "dataset", dataSet: data.dataSet }
+    );
     toast("🎉 Great Choice", {
       className: "bg-green-400",
       description: "Let's monitor that data with Streamclusters",
@@ -125,78 +136,37 @@ export const DataSetForm = () => {
                   </CardHeader>
                 </Card>
               ))}
-              <Card {...getCardProps("peak-simulation", field)}>
+              <Card {...getCardProps("synthetic", field)}>
                 <CardHeader>
-                  <CardTitle>Peaking Data Simulation</CardTitle>
+                  <CardTitle>Synthetic stream (seeded)</CardTitle>
                   <CardDescription>
-                    Free configuration of a data stream with random peaks.
+                    Streams follow planted clusters, some switch cluster and
+                    some show injected anomalies, all at known times
+                    (ground truth for evaluation and user studies).
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="peakSimulation.columns"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Columns</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Colums"
-                            onClick={(e) => e.stopPropagation()}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          This is the amount of parallel time series.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="peakSimulation.rows"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rows</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Rows"
-                            onClick={(e) => e.stopPropagation()}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          This is the amount of timestamps for each time series
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="peakSimulation.streamingInterval"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Streaming Interval (ms)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="Streaming Interval"
-                            onClick={(e) => e.stopPropagation()}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          This is the time in milliseconds as in interval in
-                          order to append a new row to the data set.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <CardContent className="grid grid-cols-2 gap-4">
+                  {syntheticFields.map(({ name, label, description }) => (
+                    <FormField
+                      key={name}
+                      control={form.control}
+                      name={`synthetic.${name}`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{label}</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              onClick={(e) => e.stopPropagation()}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>{description}</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
                 </CardContent>
               </Card>
 

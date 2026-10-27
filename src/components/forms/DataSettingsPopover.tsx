@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useRawDataStore } from "@/store/useRawDataStore";
+import { usePlaybackStore } from "@/store/usePlaybackStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
@@ -50,16 +51,16 @@ type FormValues = z.infer<typeof formSchema>;
 const DataSimulationSettingsForm = ({ onClose }: { onClose: () => void }) => {
   const dimensions = useRawDataStore((state) => state.dimensions);
   const values = useRawDataStore((state) => state.values);
-  const streamingInterval = useRawDataStore((state) => state.streamingInterval);
-  const mode = useRawDataStore((state) => state.mode);
 
-  const updateData = useRawDataStore((state) => state.updateData);
+  const load = usePlaybackStore((state) => state.load);
+
+  const intervalMs = usePlaybackStore((state) => state.intervalMs);
 
   const defaultValues = {
-    mode: mode,
+    mode: "peaks" as const,
     rows: values.length,
     columns: dimensions.length + 1,
-    streamingInterval: streamingInterval ?? 0,
+    streamingInterval: intervalMs,
   };
 
   const form = useForm<FormValues>({
@@ -70,12 +71,18 @@ const DataSimulationSettingsForm = ({ onClose }: { onClose: () => void }) => {
   const onSubmit = (data: FormValues) => {
     const { rows, columns, streamingInterval } = data;
 
-    updateData(
-      data.mode,
-      columns,
-      rows,
-      streamingInterval > 0 ? streamingInterval : undefined
-    );
+    // Legacy popover (only used by the unused Navigation component): loads
+    // a seeded synthetic stream of the requested size.
+    void load({
+      kind: "synthetic",
+      config: {
+        seed: 1,
+        nStreams: columns,
+        nTicks: rows,
+        nClusters: 4,
+        intervalMs: streamingInterval > 0 ? streamingInterval : 1000,
+      },
+    });
 
     onClose();
   };

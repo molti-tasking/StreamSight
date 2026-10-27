@@ -73,7 +73,7 @@ export const StreamClustersBar = () => {
             }))
           }
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px]" aria-label="Layout">
             <div className="flex flex-row items-center gap-2">
               <SelectValue
                 placeholder={"Layout Mode"}
@@ -104,7 +104,7 @@ export const StreamClustersBar = () => {
                 }))
               }
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px]" aria-label="Treemap significance">
                 <div className="flex flex-row items-center gap-2">
                   <SelectValue
                     placeholder={"Layout Mode"}
@@ -170,7 +170,7 @@ export const StreamClustersBar = () => {
               }))
             }
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" aria-label="Order by">
               <SelectValue placeholder="Order" className="justify-start" />
             </SelectTrigger>
             <SelectContent>
@@ -257,7 +257,7 @@ export const StreamClustersBar = () => {
             }))
           }
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px]" aria-label="Chart view mode">
             <div className="flex flex-row items-center gap-2">
               <SelectValue
                 placeholder={"Layout Mode"}
