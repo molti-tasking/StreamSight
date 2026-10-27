@@ -11,10 +11,19 @@ import {
   sanitizeRows,
 } from "./clusterTypes";
 
+// Resolve the emitted `.wasm` asset to an absolute URL. wasm-bindgen's default
+// `init()` builds a root-relative path (`/_next/static/media/...wasm`) which
+// `fetch()` cannot parse against a worker's base; letting webpack rewrite our
+// own `new URL(..., import.meta.url)` yields an absolute href that always loads.
+const wasmUrl = new URL(
+  "../../../backend/rust_wasm_module/pkg/rust_wasm_module_bg.wasm",
+  import.meta.url
+).href;
+
 // Initialize the WASM module once, lazily, and reuse the promise for every call.
 let wasmReady: Promise<unknown> | null = null;
 const ensureReady = () => {
-  if (!wasmReady) wasmReady = init();
+  if (!wasmReady) wasmReady = init({ module_or_path: wasmUrl });
   return wasmReady;
 };
 
