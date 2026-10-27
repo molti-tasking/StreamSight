@@ -3,15 +3,15 @@ import { z } from "zod";
 
 export const streamClustersSettingsSchema = z.object({
   layoutMode: z.enum(["treemap", "grid", "list", "baseline", "clusterMap"]),
-  showClusterAssignments: z.coerce.boolean(),
-  clusterAssignmentHistoryDepth: z.coerce.number(),
+  showClusterAssignments: z.coerce.boolean<boolean>(),
+  clusterAssignmentHistoryDepth: z.coerce.number<number>(),
   clusterAssignmentOrientation: z.enum(["vertical", "horizontal"]),
   treemapSignificanceMode: z.enum(["clusterSize", "clusterVariance"]),
   clusterOrderMode: z.enum(["stable", "size", "variance", "churn"]),
-  animateTransitions: z.coerce.boolean(),
+  animateTransitions: z.coerce.boolean<boolean>(),
   chartMode: z.enum(["highlighted", "multiline", "envelope", "plotly"]),
-  showStreamLabel: z.coerce.boolean(),
-  showClusterLegend: z.coerce.boolean(),
+  showStreamLabel: z.coerce.boolean<boolean>(),
+  showClusterLegend: z.coerce.boolean<boolean>(),
 });
 
 export type StreamClustersSettings = z.infer<

@@ -29,9 +29,9 @@ import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSett
 const formSchema = z.object({
   dataSet: z.enum(["S&P500", "GDP", "peak-simulation"]),
   peakSimulation: z.object({
-    rows: z.coerce.number(),
-    columns: z.coerce.number(),
-    streamingInterval: z.coerce.number(),
+    rows: z.coerce.number<number>(),
+    columns: z.coerce.number<number>(),
+    streamingInterval: z.coerce.number<number>(),
   }),
 });
 

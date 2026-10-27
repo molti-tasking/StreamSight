@@ -40,9 +40,9 @@ export function DataSettingsPopover() {
 
 const formSchema = z.object({
   mode: z.enum(["random", "peaks"]),
-  rows: z.coerce.number(),
-  columns: z.coerce.number(),
-  streamingInterval: z.coerce.number(),
+  rows: z.coerce.number<number>(),
+  columns: z.coerce.number<number>(),
+  streamingInterval: z.coerce.number<number>(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
