@@ -8,6 +8,8 @@ import type { VisualizationSpec } from "vega-embed";
 import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { timeAxisFormat } from "@/lib/timeAxis";
+import { useTimeAxisKind } from "./charts/useTimeAxis";
 
 /**
  * Focus + context timeline overview for multi-scale navigation.
@@ -51,6 +53,16 @@ export const TimelineOverview = () => {
     [clustersInTime]
   );
 
+  const timeAxisKind = useTimeAxisKind();
+  const axisFormat = useMemo(
+    () =>
+      timeAxisFormat(
+        timeAxisKind,
+        data.length > 1 ? data[data.length - 1].timestamp - data[0].timestamp : 0
+      ),
+    [timeAxisKind, data]
+  );
+
   const spec: VisualizationSpec = useMemo(
     () => ({
       $schema: VL_SCHEMA,
@@ -69,8 +81,12 @@ export const TimelineOverview = () => {
               type: "quantitative",
               scale: { zero: false },
               axis: {
-                title: null,
-                labelExpr: "timeFormat(datum.value, '%H:%M:%S')",
+                title: axisFormat.title,
+                titleFontSize: 9,
+                titleFontWeight: "normal",
+                titleColor: "#6b7280",
+                labelExpr: `${axisFormat.utc ? "utcFormat" : "timeFormat"}(datum.value, '${axisFormat.format}')`,
+                ...(axisFormat.tickMinStep ? { tickMinStep: axisFormat.tickMinStep } : {}),
               },
             },
             y: {
@@ -117,7 +133,7 @@ export const TimelineOverview = () => {
           : []),
       ],
     }),
-    [data, mode, from, to, bookmarks]
+    [data, mode, from, to, bookmarks, axisFormat]
   );
 
   return (

@@ -4,9 +4,12 @@ import { useRawDataStore } from "@/store/useRawDataStore";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { useTemporalNavigationStore } from "@/store/useTemporalNavigationStore";
-import { timeFormat } from "d3";
+import { timeFormat, utcFormat } from "d3";
+import { timeAxisFormat } from "@/lib/timeAxis";
+import { useTimeAxisKind } from "./charts/useTimeAxis";
 import { useEffect, useMemo } from "react";
-import { colorForClusterId } from "./clusterColors";
+import { clusterColors, OUTLIER_COLOR } from "./clusterColors";
+import { ColorSlots } from "@/lib/clustering/colorSlots";
 
 export const AggregatedClusterView = () => {
   const values = useRawDataStore((state) => state.values);
@@ -33,6 +36,25 @@ export const AggregatedClusterView = () => {
         : allClustersInTime,
     [allClustersInTime, navMode, rangeFrom, rangeTo]
   );
+  const anomalyLog = useViewModelStore((state) => state.anomalyLog);
+  // Anomalies by row timestamp, for markers above the columns.
+  const anomaliesAt = useMemo(() => {
+    const byTime = new Map<string, string[]>();
+    for (const a of anomalyLog) {
+      const key = String(a.timestamp);
+      byTime.set(key, [...(byTime.get(key) ?? []), a.label]);
+    }
+    return byTime;
+  }, [anomalyLog]);
+  // Colours: palette slots assigned along the time axis, so clusters that
+  // exist in the same column never share a colour (up to 8).
+  const cellColors = useMemo(() => {
+    const slots = new ColorSlots(clusterColors.length);
+    return clustersInTime.map(({ clusters }) => {
+      slots.update(clusters.map(([, id]) => id));
+      return clusters.map(([, id]) => (id < 0 ? OUTLIER_COLOR : clusterColors[slots.slotOf(id)]));
+    });
+  }, [clustersInTime]);
   const processClustersInTimeData = useViewModelStore(
     (state) => state.processClustersInTimeData
   );
@@ -40,6 +62,17 @@ export const AggregatedClusterView = () => {
   useEffect(() => {
     processClustersInTimeData();
   }, [presentationSettings, values, processClustersInTimeData]);
+
+  const timeAxisKind = useTimeAxisKind();
+  const axisFormat = useMemo(() => {
+    const first = Number(clustersInTime[0]?.timestamp ?? 0);
+    const last = Number(clustersInTime[clustersInTime.length - 1]?.timestamp ?? 0);
+    return timeAxisFormat(timeAxisKind, last - first);
+  }, [timeAxisKind, clustersInTime]);
+  const formatTime = useMemo(
+    () => (axisFormat.utc ? utcFormat : timeFormat)(axisFormat.format),
+    [axisFormat]
+  );
 
   const interestingTimestampIndizes = useMemo(
     () => [
@@ -80,13 +113,23 @@ export const AggregatedClusterView = () => {
             key={`${groupIndex}-${timestamp}`}
             className={cn(
               "flex flex-1 flex-col shrink items-center overflow-hidden ",
+              "relative",
               groupIndex > 0 ? "border-l-[0.5px] border-white" : "rounded-l-sm"
             )}
           >
-            {clusters.map(([name, styleGroup], clusterIndex) => (
+            {anomaliesAt.has(String(timestamp)) && (
+              <div
+                className="absolute -top-3 text-[10px] leading-none text-gray-900"
+                title={anomaliesAt.get(String(timestamp))!.join("\n")}
+                aria-label="Anomaly"
+              >
+                ▼
+              </div>
+            )}
+            {clusters.map(([name], clusterIndex) => (
               <div
                 key={`${groupIndex}-${clusterIndex}-${name}`}
-                style={{ background: colorForClusterId(styleGroup) }}
+                style={{ background: cellColors[groupIndex]?.[clusterIndex] }}
                 className={cn(
                   "flex-1 min-w-1 w-full",
                   animate && "transition-colors duration-700",
@@ -104,6 +147,9 @@ export const AggregatedClusterView = () => {
                 )}
               >
                 {formatTime(new Date(Number(timestamp)))}
+                {groupIndex === 0 && (
+                  <span className="text-muted-foreground"> ({axisFormat.title})</span>
+                )}
               </div>
             )}
           </div>
@@ -113,4 +159,3 @@ export const AggregatedClusterView = () => {
   );
 };
 
-const formatTime = timeFormat("%d.%m.%y %H:%M");

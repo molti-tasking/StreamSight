@@ -11,6 +11,7 @@ import { DataProcessingSettingsDialog } from "@/components/forms/DataProcessingS
 import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import { TimelineOverview } from "@/components/TimelineOverview";
 import { PlaybackControls } from "@/components/PlaybackControls";
+import { PerfOverlay } from "@/components/PerfOverlay";
 import { TreemapLayout } from "@/components/TreemapLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -56,7 +57,7 @@ export default function StreamClustersPage() {
         <StreamClustersBar />
       </div>
       <TimelineOverview />
-      <div className={"w-screen flex-1"} style={{ overflow: "overlay" }}>
+      <div id="streamsight-view" className={"w-screen flex-1 bg-white"} style={{ overflow: "overlay" }}>
         <div
           className={cn(
             "w-screen p-2 flex gap-2 h-full",
@@ -71,6 +72,7 @@ export default function StreamClustersPage() {
           </ErrorBoundary>
         </div>
       </div>
+      <PerfOverlay />
     </>
   );
 }

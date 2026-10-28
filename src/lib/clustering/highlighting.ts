@@ -52,7 +52,7 @@ export const highlighter = (
         const isSameCluster = currentCluster === pastCluster;
         if (!isSameCluster) {
           differentClustersInPast = differentClustersInPast + 1;
-          if (!lastDimension) {
+          if (lastDimension === undefined) {
             lastDimension = pastCluster;
           }
         }

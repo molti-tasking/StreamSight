@@ -1,34 +1,44 @@
 /**
  * Lightweight runtime instrumentation for the live app.
  *
- * Records per-tick compute/render timings into a bounded ring buffer so we can
- * (a) drive adaptive throttling from the *measured* compute cost (see
- * useViewModelStore), and (b) expose a dev overlay / export the samples as CSV
- * for the paper's end-to-end scalability numbers. Kept dependency-free and
- * SSR-safe (uses `performance.now()` only).
+ * Records per-update timings into a bounded ring buffer so we can (a) drive
+ * adaptive throttling from the *measured* compute cost (see
+ * useViewModelStore), and (b) show them in the dev overlay and export them as
+ * CSV for the end-to-end latency benchmark (bench/e2e.mjs). Dependency-free
+ * and SSR-safe.
+ *
+ * One update = one run of the clustering pipeline:
+ *   newest row arrives -> worker clustering (computeMs) -> view model set
+ *   -> every chart that changed re-renders -> next painted frame.
  */
 
 export type PerfSample = {
   /** Wall-clock time the sample was recorded (ms since epoch). */
   at: number;
+  /** Update sequence number. */
+  seq: number;
   nStreams: number;
   clusterCount: number;
+  layout?: string;
   dataTicks?: number;
   eps?: number;
   minPts?: number;
-  /** WASM clustering duration for this tick (ms). */
+  /** Clustering round trip to the worker, including WASM (ms). */
   computeMs: number;
-  /** Time from compute-done to the next animation frame commit (ms). */
+  /** View-model update until all changed charts re-rendered and a frame was painted (ms). */
   renderMs?: number;
+  /** Arrival of the newest row in this update until that frame was painted (ms). */
+  latencyMs?: number;
 };
 
-const RING_CAPACITY = 500;
+const RING_CAPACITY = 2000;
 const ring: PerfSample[] = [];
 
 /** Append a sample, evicting the oldest once the ring is full. */
-export function recordSample(sample: PerfSample): void {
+export function recordSample(sample: PerfSample): PerfSample {
   ring.push(sample);
   if (ring.length > RING_CAPACITY) ring.shift();
+  return sample;
 }
 
 /** Snapshot of all retained samples (oldest first). */
@@ -60,46 +70,85 @@ export async function timed<T>(fn: () => Promise<T>): Promise<{
   return { result, ms: performance.now() - t0 };
 }
 
-/**
- * Resolve on the next animation frame (after the browser has painted). Used to
- * approximate render latency: the gap between handing React new data and the
- * subsequent frame. No-ops to a microtask when rAF is unavailable (SSR/tests).
- */
-export function nextFrame(): Promise<number> {
-  if (typeof requestAnimationFrame === "undefined") {
-    return Promise.resolve(performance.now());
-  }
-  return new Promise((resolve) =>
-    requestAnimationFrame(() => resolve(performance.now()))
-  );
+// ---------------------------------------------------------------------------
+// Render tracking: when has everything that changed been drawn?
+// ---------------------------------------------------------------------------
+
+let pendingRenders = 0;
+let waiting: { committedAt: number; finish: (paintedAt: number, committedAt: number) => void } | null = null;
+
+const afterTwoFrames = (fn: () => void) => {
+  if (typeof requestAnimationFrame === "undefined") return void setTimeout(fn, 0);
+  // The first callback runs before the next paint, the second after it.
+  requestAnimationFrame(() => requestAnimationFrame(fn));
+};
+
+function maybeFinish() {
+  if (!waiting || pendingRenders > 0) return;
+  const current = waiting;
+  waiting = null;
+  afterTwoFrames(() => current.finish(performance.now(), current.committedAt));
 }
 
-/** Serialize the ring buffer to CSV (same column order as bench/sweep.mjs). */
-export function samplesToCsv(): string {
-  const cols = [
-    "at",
-    "nStreams",
-    "clusterCount",
-    "dataTicks",
-    "eps",
-    "minPts",
-    "computeMs",
-    "renderMs",
-  ];
-  const lines = [cols.join(",")];
-  for (const s of ring) {
-    lines.push(
-      [
-        s.at,
-        s.nStreams,
-        s.clusterCount,
-        s.dataTicks ?? "",
-        s.eps ?? "",
-        s.minPts ?? "",
-        s.computeMs.toFixed(4),
-        s.renderMs?.toFixed(4) ?? "",
-      ].join(",")
-    );
-  }
-  return lines.join("\n");
+/**
+ * A chart starts re-rendering (called synchronously during React's commit).
+ * Returns a function that marks it settled; calling it more than once is a
+ * no-op, so it can also be used in effect cleanups.
+ */
+export function renderStarted(): () => void {
+  pendingRenders++;
+  let settled = false;
+  return () => {
+    if (settled) return;
+    settled = true;
+    pendingRenders = Math.max(0, pendingRenders - 1);
+    maybeFinish();
+  };
+}
+
+/**
+ * Call right after the view model was updated. `finish` runs once every
+ * chart that re-rendered for this update has settled and a frame has been
+ * painted. A newer update supersedes one that has not finished yet.
+ */
+export function awaitPaint(finish: (paintedAt: number, committedAt: number) => void): void {
+  waiting = { committedAt: performance.now(), finish };
+  // React commits synchronously (external-store update); charts register
+  // their renders during that commit, so check once the commit is done.
+  setTimeout(maybeFinish, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Export
+// ---------------------------------------------------------------------------
+
+const CSV_COLUMNS: (keyof PerfSample)[] = [
+  "at",
+  "seq",
+  "nStreams",
+  "clusterCount",
+  "layout",
+  "dataTicks",
+  "eps",
+  "minPts",
+  "computeMs",
+  "renderMs",
+  "latencyMs",
+];
+
+/** Serialize samples (default: the ring buffer) to CSV. */
+export function samplesToCsv(samples: PerfSample[] = ring): string {
+  const format = (v: unknown) =>
+    v === undefined ? "" : typeof v === "number" && !Number.isInteger(v) ? v.toFixed(3) : String(v);
+  return [
+    CSV_COLUMNS.join(","),
+    ...samples.map((s) => CSV_COLUMNS.map((c) => format(s[c])).join(",")),
+  ].join("\n");
+}
+
+/** Nearest-rank percentile of a list of numbers (q in 0..1). */
+export function percentile(values: number[], q: number): number | undefined {
+  if (!values.length) return undefined;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(q * sorted.length) - 1))];
 }

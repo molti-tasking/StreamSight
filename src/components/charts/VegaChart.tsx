@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { renderStarted } from "@/lib/bench/instrument";
 import { useVegaEmbed } from "react-vega";
 import type { EmbedOptions, VisualizationSpec } from "vega-embed";
 
@@ -45,6 +46,9 @@ export function hoistInlineData(spec: VisualizationSpec): {
   return { structure: walk(spec) as VisualizationSpec, datasets };
 }
 
+/** Live Vega views by their container element (for vector export). */
+export const vegaViews = new Map<HTMLElement, NonNullable<ReturnType<typeof useVegaEmbed>>["view"]>();
+
 export type VegaChartProps = {
   spec: VisualizationSpec;
   /** Show the vega-embed action menu (export, view source). */
@@ -53,6 +57,12 @@ export type VegaChartProps = {
   signals?: Record<string, (name: string, value: unknown) => void>;
   /** Called once the view has re-rendered new data and a frame has passed. */
   onRendered?: (ms: number) => void;
+  /**
+   * Values for top-level params declared in the spec (e.g. scale domains via
+   * `{expr: "[xmin, xmax]"}`). Pushed into the live view like data, so
+   * changing them does not rebuild the view.
+   */
+  params?: Record<string, unknown>;
 } & Omit<React.HTMLAttributes<HTMLDivElement>, "onError">;
 
 /**
@@ -68,8 +78,10 @@ export const VegaChart = ({
   actions = false,
   signals,
   onRendered,
+  params,
   ...divProps
 }: VegaChartProps) => {
+  const paramsKey = JSON.stringify(params ?? {});
   const ref = useRef<HTMLDivElement>(null);
   const { structure, datasets } = useMemo(() => hoistInlineData(spec), [spec]);
   const structureKey = useMemo(() => JSON.stringify(structure), [structure]);
@@ -94,6 +106,24 @@ export const VegaChart = ({
   const result = useVegaEmbed({ ref, spec: embedded.spec, options });
   const view = result?.view;
 
+  // Render tracking (end-to-end latency): a (re-)embed is pending until the
+  // new view exists; a data push is pending until the view has re-run.
+  const embedSettled = useRef<() => void>(undefined);
+  useLayoutEffect(() => {
+    const settle = renderStarted();
+    embedSettled.current = settle;
+    return settle;
+  }, [embedded.spec]);
+  useLayoutEffect(() => {
+    if (view) embedSettled.current?.();
+    const element = ref.current;
+    if (!view || !element) return;
+    vegaViews.set(element, view);
+    return () => {
+      vegaViews.delete(element);
+    };
+  }, [view]);
+
   const onRenderedRef = useRef(onRendered);
   const signalsRef = useRef(signals);
   useEffect(() => {
@@ -101,30 +131,37 @@ export const VegaChart = ({
     signalsRef.current = signals;
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!view) return;
     let cancelled = false;
+    const settle = renderStarted();
     const start = performance.now();
     try {
       for (const [name, values] of Object.entries(datasets)) {
         view.data(name, values);
       }
+      for (const [name, value] of Object.entries(JSON.parse(paramsKey))) {
+        view.signal(name, value);
+      }
     } catch {
+      settle();
       return; // the view was finalized by a concurrent re-embed
     }
     view
       .runAsync()
       .then(() => {
+        settle();
         if (cancelled) return;
         requestAnimationFrame(() => {
           if (!cancelled) onRenderedRef.current?.(performance.now() - start);
         });
       })
-      .catch(() => undefined);
+      .catch(settle);
     return () => {
       cancelled = true;
+      settle();
     };
-  }, [view, datasets]);
+  }, [view, datasets, paramsKey]);
 
   const signalNames = Object.keys(signals ?? {}).join(",");
   useEffect(() => {

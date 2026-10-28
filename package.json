@@ -12,8 +12,10 @@
     "test": "vitest run",
     "test:rust": "cargo test --manifest-path backend/rust_wasm_module/Cargo.toml",
     "build:wasm": "cd backend/rust_wasm_module && wasm-pack build --release --target web --out-dir pkg && wasm-pack build --release --target nodejs --out-dir pkg-node",
-    "bench:compute": "node bench/sweep.mjs",
-    "convert:nirs": "node scripts/convert-nirs.mjs"
+    "bench:compute": "node bench/sweep.mjs --mode scale --meta bench/results.meta.json > bench/results.csv",
+    "convert:nirs": "node scripts/convert-nirs.mjs",
+    "bench:eps": "node bench/sweep.mjs --mode eps --seeds 1,2,3,4,5 --meta bench/results-eps.meta.json > bench/results-eps.csv",
+    "bench:e2e": "node bench/e2e.mjs --meta bench/results-e2e.meta.json > bench/results-e2e.csv"
   },
   "dependencies": {
     "@hookform/resolvers": "^6.0.1",
@@ -33,6 +35,7 @@
     "clsx": "^2.1.1",
     "comlink": "^4.4.2",
     "d3": "^7.9.0",
+    "html-to-image": "^1.11",
     "lodash": "^4.17.21",
     "lucide-react": "^1.62.0",
     "next": "^16.4.3",
@@ -62,6 +65,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.3",
     "h5wasm": "^0.8",
+    "playwright": "1.58.2",
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.6.14",

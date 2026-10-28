@@ -21,21 +21,30 @@ export const LegendButton = ({
     return children;
   }
 
+  // A small corner button lists the cluster's streams; the chart itself
+  // stays free for pointer interaction (hover / click a stream).
   return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <div className="absolute top-0 bottom-0 left-0 right-0 cursor-help z-50 w-full h-full">
-          {children}
-        </div>
-      </HoverCardTrigger>
-      <HoverCardContent className="w-80 lg:w-2xl xl:w-4xl absolute top-0 bottom-0 left-0 right-0">
-        <h4 className="font-medium mb-2">Streams</h4>
-        <p className="flex flex-row gap-1 flex-wrap">
-          {dimensions.map((dim) => (
-            <Badge key={dim}>{dim}</Badge>
-          ))}
-        </p>
-      </HoverCardContent>
-    </HoverCard>
+    <div className="absolute inset-0">
+      {children}
+      <HoverCard openDelay={150}>
+        <HoverCardTrigger asChild>
+          <button
+            type="button"
+            className="absolute top-0.5 right-0.5 z-10 rounded-full bg-white/80 px-1 text-[10px] leading-4 text-gray-600 shadow-sm"
+            aria-label={`Streams in this cluster (${dimensions.length})`}
+          >
+            ⓘ {dimensions.length}
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-80 lg:w-2xl">
+          <h4 className="font-medium mb-2">Streams ({dimensions.length})</h4>
+          <p className="flex flex-row gap-1 flex-wrap">
+            {dimensions.map((dim) => (
+              <Badge key={dim}>{dim}</Badge>
+            ))}
+          </p>
+        </HoverCardContent>
+      </HoverCard>
+    </div>
   );
 };

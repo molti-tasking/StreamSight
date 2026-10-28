@@ -18,6 +18,8 @@ const capRows = <T>(rows: T[]): T[] =>
 interface DataStore {
   dimensions: string[];
   values: Record<string, number>[];
+  /** performance.now() when the newest row arrived (for latency). */
+  lastAppendAt: number;
 
   /** Clears the buffer for a new source with the given streams. */
   reset: (dimensions: string[]) => void;
@@ -28,8 +30,12 @@ interface DataStore {
 export const useRawDataStore = create<DataStore>((set) => ({
   dimensions: [],
   values: [],
+  lastAppendAt: 0,
 
   reset: (dimensions) => set({ dimensions, values: [] }),
   append: (rows) =>
-    set((state) => ({ values: capRows([...state.values, ...rows]) })),
+    set((state) => ({
+      values: capRows([...state.values, ...rows]),
+      lastAppendAt: performance.now(),
+    })),
 }));

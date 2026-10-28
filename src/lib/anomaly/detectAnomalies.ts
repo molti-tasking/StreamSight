@@ -83,16 +83,18 @@ export function detectAnomalies(
       const z = (current - med) / sigma;
       if (Math.abs(z) < zThreshold) continue;
 
-      const pct = med !== 0 ? ((current - med) / Math.abs(med)) * 100 : 0;
+      // Report the change in data units: a percentage of the median is
+      // meaningless for signals centred on zero (e.g. ΔHbO).
+      const delta = current - med;
+      const sign = delta >= 0 ? "+" : "−";
       const type: AnomalyType = z > 0 ? "spike" : "drop";
-      const sign = pct >= 0 ? "+" : "";
       events.push({
         timestamp,
         dimension: key,
         clusterId,
         type,
         magnitude: z,
-        label: `${key}: ${type} ${sign}${pct.toFixed(0)}% (z=${z.toFixed(1)})`,
+        label: `${key}: ${type} ${sign}${Number(Math.abs(delta).toPrecision(3))} vs median (z=${z.toFixed(1)})`,
       });
     }
   }
@@ -125,7 +127,7 @@ export function regimeChangeEvents(
         clusterId,
         type: "regime-change",
         magnitude: opacity,
-        label: `${dimension}: moved from cluster ${lastDimension}`,
+        label: `${dimension}: moved from ${lastDimension < 0 ? "Outliers" : `cluster ${lastDimension}`}`,
       });
     }
   });

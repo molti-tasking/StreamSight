@@ -4,7 +4,11 @@ import { useClusterProcessingSettingsStore } from "./ClusterProcessingSettingsSt
 import { useRawDataStore } from "./useRawDataStore";
 import { useStreamClustersSettingsStore } from "./useStreamClustersSettingsStore";
 import { highlighter } from "@/lib/clustering/highlighting";
-import { getClusteringClient } from "@/lib/clustering/clusteringClient";
+import { updateClusterColorSlots } from "@/components/clusterColors";
+import {
+  getClusteringClient,
+  getOverTimeClusteringClient,
+} from "@/lib/clustering/clusteringClient";
 import {
   ClusterRow,
   ClusterView,
@@ -20,7 +24,12 @@ import {
 } from "@/lib/anomaly/detectAnomalies";
 import { useManualAssignmentStore } from "./useManualAssignmentStore";
 import { useTemporalNavigationStore } from "./useTemporalNavigationStore";
-import { recordSample, recentComputeMs, timed } from "@/lib/bench/instrument";
+import {
+  awaitPaint,
+  recordSample,
+  recentComputeMs,
+  timed,
+} from "@/lib/bench/instrument";
 import { createAdaptiveThrottle } from "@/lib/bench/adaptiveThrottle";
 import { dataWrappingProcess } from "@/lib/wrapping";
 import {
@@ -52,6 +61,8 @@ interface DataStore {
 
   /** Auto-detected, auto-labeled anomalies for the current window. */
   anomalies: AnomalyEvent[];
+  /** Every anomaly detected so far (deduplicated, most recent 500). */
+  anomalyLog: AnomalyEvent[];
 
   /**
    * This data is needed only for certain views. It should only be calculated when needed.
@@ -65,13 +76,17 @@ interface DataStore {
 export const useViewModelStore = create<DataStore>((set, get) => {
   // Persists across ticks so cluster ids stay stable as membership evolves.
   const tracker = new ClusterTracker();
+  let updateSeq = 0;
 
   const throttledDataProcess = createAdaptiveThrottle(
     async () => {
-      const dimensions = useRawDataStore.getState().dimensions;
-      const values = useRawDataStore.getState().values;
-      const { chartMode, clusterAssignmentHistoryDepth, clusterOrderMode } =
-        useStreamClustersSettingsStore.getState();
+      const { dimensions, values, lastAppendAt } = useRawDataStore.getState();
+      const {
+        chartMode,
+        clusterAssignmentHistoryDepth,
+        clusterOrderMode,
+        layoutMode,
+      } = useStreamClustersSettingsStore.getState();
 
       const {
         eps,
@@ -172,8 +187,10 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         clusterAssignment,
       };
 
-      recordSample({
+      const sample = recordSample({
         at: Date.now(),
+        seq: ++updateSeq,
+        layout: layoutMode,
         nStreams: dimensions.length,
         clusterCount,
         dataTicks: clusteringSettings.dataTicks,
@@ -230,6 +247,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         ),
       ];
 
+      updateClusterColorSlots(ordered.clusterIds);
       set({
         aggregated: ordered.aggregated,
         yDomain: aggregated.yDomain,
@@ -238,6 +256,11 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         clusterAssignmentHistory: updatedClusterAssignmentHistory,
         highlightInfo: ordered.highlightInfo,
         anomalies,
+        anomalyLog: appendAnomalies(get().anomalyLog, anomalies),
+      });
+      awaitPaint((paintedAt, committedAt) => {
+        sample.renderMs = paintedAt - committedAt;
+        sample.latencyMs = paintedAt - lastAppendAt;
       });
     },
     {
@@ -269,7 +292,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         useClusterProcessingSettingsStore.getState()
       );
 
-      const { clustersInTime } = await getClusteringClient().clusteringOverTime(
+      const { clustersInTime } = await getOverTimeClusteringClient().clusteringOverTime(
         values,
         dimensions,
         clusteringSettings
@@ -279,7 +302,22 @@ export const useViewModelStore = create<DataStore>((set, get) => {
         "ViewModel cluster in time process duration " + String(timerName)
       );
 
-      set({ clustersInTime });
+      // Stable ids across the series (positions differ between windows), so
+      // a cluster keeps its colour along the time axis of the cluster map.
+      const overTimeTracker = new ClusterTracker();
+      const stableClustersInTime = clustersInTime.map(({ timestamp, clusters }) => {
+        const count = Math.max(0, ...clusters.map(([, position]) => position + 1));
+        const members: string[][] = Array.from({ length: count }, () => []);
+        for (const [dim, position] of clusters) if (position >= 0) members[position].push(dim);
+        const ids = overTimeTracker.track(members);
+        return {
+          timestamp,
+          clusters: clusters.map(
+            ([dim, position]) => [dim, position >= 0 ? ids[position] : position] as [string, number]
+          ),
+        };
+      });
+      set({ clustersInTime: stableClustersInTime });
     },
     10000,
     { trailing: true, leading: false }
@@ -292,6 +330,7 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     clusterIds: [],
     clusterAssignmentHistory: [],
     anomalies: [],
+    anomalyLog: [],
     clustersInTime: [],
     highlightInfo: [],
 
@@ -299,3 +338,13 @@ export const useViewModelStore = create<DataStore>((set, get) => {
     processClustersInTimeData: throttledClustersInTimeProcess,
   };
 });
+
+const ANOMALY_LOG_SIZE = 500;
+const anomalyKey = (a: AnomalyEvent) => `${a.timestamp}|${a.dimension}|${a.type}`;
+
+/** Adds anomalies not seen before; keeps the most recent ANOMALY_LOG_SIZE. */
+export function appendAnomalies(log: AnomalyEvent[], fresh: AnomalyEvent[]): AnomalyEvent[] {
+  const seen = new Set(log.map(anomalyKey));
+  const added = fresh.filter((a) => !seen.has(anomalyKey(a)));
+  return added.length ? [...log, ...added].slice(-ANOMALY_LOG_SIZE) : log;
+}

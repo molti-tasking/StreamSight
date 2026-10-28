@@ -18,14 +18,14 @@ export type StreamClustersSettings = z.infer<
   typeof streamClustersSettingsSchema
 >;
 
-export const layoutViewOptions: Omit<
-  Record<StreamClustersSettings["layoutMode"], string>,
-  "clusterMap"
-> = {
+// The "treemap" layout is a flat, size-proportional tiling (no hierarchy),
+// so the UI calls it "Proportional tiles"; the internal id stays.
+export const layoutViewOptions: Record<StreamClustersSettings["layoutMode"], string> = {
   list: "List",
   grid: "Grid",
-  treemap: "Treemap",
-  baseline: "Baseline",
+  treemap: "Proportional tiles",
+  baseline: "Baseline (box plots)",
+  clusterMap: "Cluster map (over time)",
 };
 
 export const treemapViewOptions: Record<

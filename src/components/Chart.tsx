@@ -60,6 +60,7 @@ export const Chart = ({
       yDomain={yDomain}
       mode={mode}
       saveScreenSpace={saveScreenSpace}
+      anomalies={anomalies}
     />
   );
 };

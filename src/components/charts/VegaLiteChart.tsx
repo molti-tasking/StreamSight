@@ -1,6 +1,8 @@
 import { cn, deepMerge } from "@/lib/utils";
 import type { VisualizationSpec } from "vega-embed";
 import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
+import { useTimeAxis } from "./useTimeAxis";
+import { anomalyLayers } from "./anomalyLayers";
 import { ChartProps } from "./ChartProps";
 import { LegendButton } from "./LegendButton";
 import { useMemo } from "react";
@@ -112,7 +114,9 @@ export const VegaLiteChart = ({
   yDomain,
   saveScreenSpace,
   mode,
+  anomalies,
 }: ChartProps) => {
+  const timeAxis = useTimeAxis();
   const dimensions = useMemo(
     () =>
       values.length
@@ -137,6 +141,14 @@ export const VegaLiteChart = ({
         contains: "padding",
       },
 
+      // Domains come in as params (see VegaChart), so a tick does not
+      // change the spec's structure.
+      params: [
+        { name: "xmin", value: 0 },
+        { name: "xmax", value: 1 },
+        { name: "ymin", value: 0 },
+        { name: "ymax", value: 1 },
+      ],
       data: { values },
       transform: [{ fold: dimensions, as: ["variable", "value"] }],
 
@@ -145,13 +157,15 @@ export const VegaLiteChart = ({
         x: {
           field: "timestamp",
           type: !!saveScreenSpace ? "ordinal" : "temporal",
-          axis: !!saveScreenSpace ? { labelExpr: "" } : {},
-          title: null,
+          ...(saveScreenSpace
+            ? {}
+            : { scale: { type: timeAxis.scale.type, domain: { expr: "[xmin, xmax]" } } }),
+          axis: !!saveScreenSpace ? { labelExpr: "", title: null } : timeAxis.axis,
         },
         y: {
           field: "value",
           type: "quantitative",
-          scale: { domain: yDomain },
+          scale: { domain: { expr: "[ymin, ymax]" } },
           title: null,
           axis: {
             labelPadding: -20,
@@ -165,11 +179,30 @@ export const VegaLiteChart = ({
     };
 
     // I don't 100% know why, but as of now it was very important to keep this order of the specs how they are getting passed into the merge function. Otherwise, the vizualisation breaks.
-    return deepMerge(
+    const merged = deepMerge(
       dataSpec,
       chartModeSpecs[mode as "multiline" | "envelope"]
-    );
-  }, [values, dimensions, saveScreenSpace, yDomain, mode]);
+    ) as Record<string, unknown> & { encoding?: { x?: unknown } };
+    if (!anomalies?.length) return merged as VisualizationSpec;
+    // Wrap the chart in a layer so anomaly markers can share its x axis.
+    const { $schema, width, height, background, padding, autosize, data, params, ...view } = merged;
+    return {
+      $schema,
+      width,
+      height,
+      background,
+      padding,
+      autosize,
+      params,
+      data,
+      encoding: { x: merged.encoding?.x },
+      layer: [view, ...anomalyLayers(anomalies)],
+    } as VisualizationSpec;
+  }, [values, dimensions, saveScreenSpace, mode, timeAxis.scale.type, timeAxis.axis, anomalies]);
+  const params = useMemo(
+    () => ({ xmin: timeAxis.domain[0], xmax: timeAxis.domain[1], ymin: yDomain[0], ymax: yDomain[1] }),
+    [timeAxis.domain, yDomain]
+  );
 
   return (
     <div
@@ -178,6 +211,7 @@ export const VegaLiteChart = ({
       <LegendButton dimensions={dimensions}>
         <VegaChart
           spec={spec}
+          params={params}
           actions={false}
           style={{ cursor: "pointer" }}
           className={cn(

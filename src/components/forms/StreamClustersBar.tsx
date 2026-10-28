@@ -1,3 +1,5 @@
+import { withViewTransition } from "@/lib/viewTransition";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import {
@@ -59,6 +61,7 @@ export const StreamClustersBar = () => {
   const unlock = useManualAssignmentStore((s) => s.unlock);
   const clusterAssignment = useViewModelStore((s) => s.clusterAssignment);
   const anomalies = useViewModelStore((s) => s.anomalies);
+  const [acknowledged, setAcknowledged] = useState<Set<string>>(() => new Set());
 
   return (
     <div className="flex flex-row">
@@ -67,10 +70,15 @@ export const StreamClustersBar = () => {
         <Select
           value={layoutMode}
           onValueChange={(value) =>
-            updateSettings((settings) => ({
-              ...settings,
-              layoutMode: value as LayoutMode,
-            }))
+            // Clusters morph from their old to their new place.
+            withViewTransition(
+              () =>
+                updateSettings((settings) => ({
+                  ...settings,
+                  layoutMode: value as LayoutMode,
+                })),
+              useStreamClustersSettingsStore.getState().animateTransitions
+            )
           }
         >
           <SelectTrigger className="w-[180px]" aria-label="Layout">
@@ -94,7 +102,7 @@ export const StreamClustersBar = () => {
 
         {/* {layoutMode === "treemap" && (
           <>
-            <Label>Treemap Significance</Label>
+            <Label>Tile size</Label>
             <Select
               value={treemapSignificanceMode}
               onValueChange={(value) =>
@@ -104,7 +112,7 @@ export const StreamClustersBar = () => {
                 }))
               }
             >
-              <SelectTrigger className="w-[180px]" aria-label="Treemap significance">
+              <SelectTrigger className="w-[180px]" aria-label="Tile size">
                 <div className="flex flex-row items-center gap-2">
                   <SelectValue
                     placeholder={"Layout Mode"}
@@ -336,18 +344,29 @@ export const StreamClustersBar = () => {
               <li className="font-semibold">
                 {anomalies.length} detected
               </li>
-              {anomalies.slice(0, 6).map((a, i) => (
-                <li
-                  key={`${a.dimension}-${a.timestamp}-${i}`}
-                  className={cn(
-                    a.type === "spike" && "text-red-600",
-                    a.type === "drop" && "text-blue-600",
-                    a.type === "regime-change" && "text-purple-600"
-                  )}
-                >
-                  {a.label}
-                </li>
-              ))}
+              {anomalies.slice(0, 6).map((a, i) => {
+                const key = `${a.dimension}-${a.timestamp}-${a.type}`;
+                return (
+                  <li key={`${key}-${i}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAcknowledged((prev) => new Set(prev).add(key));
+                      }}
+                      title="Click to acknowledge"
+                      className={cn(
+                        "text-left",
+                        acknowledged.has(key) ? "text-gray-400 line-through" : "text-gray-900",
+                        a.type === "spike" && "before:content-['▲_']",
+                        a.type === "drop" && "before:content-['▼_']",
+                        a.type === "regime-change" && "before:content-['↔_']"
+                      )}
+                    >
+                      {a.label}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { useViewModelStore } from "@/store/useViewModelStore";
 import { useManualAssignmentStore } from "@/store/useManualAssignmentStore";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { colorForClusterId } from "./clusterColors";
 import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
 import {
@@ -99,8 +99,19 @@ const LegendBar = ({
   entries: [string, number][];
   pinnable?: boolean;
 }) => {
-  const remove = useStreamSelectionStore((state) => state.remove);
-  const add = useStreamSelectionStore((state) => state.add);
+  const setHovered = useStreamSelectionStore((state) => state.setHovered);
+  const togglePinned = useStreamSelectionStore((state) => state.togglePinned);
+  const hovered = useStreamSelectionStore((state) => state.hovered);
+  const pinned = useStreamSelectionStore((state) => state.pinned);
+  const highlightInfo = useViewModelStore((s) => s.highlightInfo);
+  // Streams that recently changed cluster -> the cluster they came from.
+  const previousCluster = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const cluster of highlightInfo)
+      for (const { dimension, lastDimension } of cluster)
+        if (lastDimension !== undefined) map.set(dimension, lastDimension);
+    return map;
+  }, [highlightInfo]);
   const clusterAssignmentOrientation = useStreamClustersSettingsStore(
     (store) => store.clusterAssignmentOrientation
   );
@@ -120,10 +131,18 @@ const LegendBar = ({
       {entries.map(([name, styleGroup], index) => {
         const cell = (
           <div
-            onMouseEnter={() => add(name)}
-            onMouseLeave={() => remove(name)}
+            data-export-cell={name}
+            onMouseEnter={() => setHovered(name)}
+            onMouseLeave={() => setHovered(undefined)}
+            onClick={(e) => {
+              e.preventDefault(); // not the assignment popover (right-click)
+              e.stopPropagation();
+              togglePinned(name);
+            }}
             className={cn(
-              "flex-1",
+              "flex-1 cursor-pointer",
+              (hovered === name || pinned.includes(name)) &&
+                "relative z-10 outline-2 outline-black",
               animate && "transition-colors duration-700",
               clusterAssignmentOrientation === "horizontal" ? "h-4" : "w-4",
               index > 0 && clusterAssignmentOrientation === "horizontal"
@@ -135,7 +154,14 @@ const LegendBar = ({
             )}
             style={{
               background: colorForClusterId(styleGroup),
+              // New member: a stripe in the colour of its previous cluster.
+              ...(pinnable && previousCluster.has(name)
+                ? {
+                    boxShadow: `inset 0 ${clusterAssignmentOrientation === "horizontal" ? "-5px" : "0"} 0 0 ${colorForClusterId(previousCluster.get(name)!)}${clusterAssignmentOrientation === "vertical" ? ", inset -5px 0 0 0 " + colorForClusterId(previousCluster.get(name)!) : ""}`,
+                  }
+                : {}),
             }}
+            title={`${name}${previousCluster.has(name) && pinnable ? ` (moved from ${previousCluster.get(name)! < 0 ? "Outliers" : "cluster " + previousCluster.get(name)})` : ""} — click: highlight, right-click: assign to cluster`}
           ></div>
         );
 
@@ -176,14 +202,21 @@ const StreamPinCell = ({
 
   const targets = Array.from(new Set(clusterIds)).sort((a, b) => a - b);
   const isPinned = name in pins;
+  const [open, setOpen] = useState(false);
 
+  // Left click highlights the stream (handled by the cell); right click opens
+  // manual assignment to a cluster.
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div
           className="flex-1 flex"
           onClick={(e) => e.stopPropagation()}
-          title={`${name}${isPinned ? " (pinned)" : ""}`}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+          aria-label={`${name}${isPinned ? " (assigned manually)" : ""}`}
         >
           {children}
         </div>

@@ -7,6 +7,7 @@ import { memo } from "react";
 import { PlotlyChart } from "./charts/PlotlyChart";
 import { colorForClusterId } from "./clusterColors";
 import { Chart } from "./Chart";
+import { clusterTransitionName } from "@/lib/viewTransition";
 
 export const ClusteredLineChartList = () => {
   return (
@@ -112,18 +113,28 @@ const Charts = memo(() => {
     );
   }
 
+  // Keyed by stable cluster id: a cluster keeps its chart (no remount) when
+  // other clusters appear or disappear, and morphs between layouts.
   return (
     <>
-      {aggregated.map((val, index) => (
-        <Chart
-          values={val}
-          className=""
-          key={index}
-          chartColor={colorFor(index)}
-          highlightInfo={highlightInfo?.[index]}
-          anomalies={anomaliesFor(index)}
-        />
-      ))}
+      {aggregated.map((val, index) => {
+        const id = clusterIds[index] ?? index;
+        return (
+          <div
+            key={id}
+            className="flex flex-1 min-h-20 min-w-0"
+            style={{ viewTransitionName: clusterTransitionName(id) }}
+          >
+            <Chart
+              values={val}
+              className=""
+              chartColor={colorFor(index)}
+              highlightInfo={highlightInfo?.[index]}
+              anomalies={anomaliesFor(index)}
+            />
+          </div>
+        );
+      })}
     </>
   );
 });

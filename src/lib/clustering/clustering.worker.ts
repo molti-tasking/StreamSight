@@ -21,6 +21,12 @@ const wasmUrl = new URL(
   import.meta.url
 ).href;
 
+// Clusters-over-time results by row timestamp, valid for one settings key.
+let overTimeCache: { key: string; byTimestamp: Map<string, [string, number][]> } = {
+  key: "",
+  byTimestamp: new Map(),
+};
+
 // Initialize the WASM module once, lazily, and reuse the promise for every call.
 let wasmReady: Promise<unknown> | null = null;
 const ensureReady = () => {
@@ -54,7 +60,9 @@ const clusteringApi = {
   /**
    * Cluster assignment for every timestamp, each computed on the trailing
    * `dataTicks` rows ending at that timestamp, with the same eps / minPts /
-   * z-normalization as the live view.
+   * z-normalization as the live view. A window's result never changes once
+   * its rows exist, so results are cached per timestamp (for the current
+   * settings and streams) and each call only clusters new rows.
    */
   async clusteringOverTime(
     rawData: ClusterRow[],
@@ -62,28 +70,34 @@ const clusteringApi = {
     settings: Omit<ClusteringSettings, "timeScale">
   ): Promise<{ clustersInTime: ClusterView[] }> {
     await ensureReady();
-    const clean = sanitizeRows(rawData);
     const contextWindow = settings.dataTicks || DEFAULT_DATA_TICKS;
+    const key = JSON.stringify([settings.eps, settings.minPts, settings.zNormalize, contextWindow, dimensions]);
+    if (key !== overTimeCache.key) overTimeCache = { key, byTimestamp: new Map() };
+    const cache = overTimeCache.byTimestamp;
+
+    const clean = sanitizeRows(rawData);
     const clustersInTime: ClusterView[] = [];
-
-    for (let i = 0; i < clean.length; i++) {
-      const endIndex = i + 1;
-      const startIndex = endIndex - contextWindow;
-      if (startIndex < 0) continue;
-
-      const window = clean.slice(startIndex, endIndex);
-      const timestamp =
-        "timestamp" in clean[i] ? String(clean[i].timestamp) : "";
-
-      const { clusterAssignment } = wasmAggregator(window, dimensions, {
-        eps: settings.eps,
-        dataTicks: window.length,
-        minPts: settings.minPts,
-        zNormalize: settings.zNormalize,
-      }) as AggregatedProps;
-
-      clustersInTime.push({ timestamp, clusters: clusterAssignment });
+    const retained = new Set<string>();
+    for (let i = contextWindow - 1; i < clean.length; i++) {
+      const timestamp = "timestamp" in clean[i] ? String(clean[i].timestamp) : "";
+      retained.add(timestamp);
+      let clusters = cache.get(timestamp);
+      if (!clusters) {
+        const window = clean.slice(i + 1 - contextWindow, i + 1);
+        clusters = (
+          wasmAggregator(window, dimensions, {
+            eps: settings.eps,
+            dataTicks: window.length,
+            minPts: settings.minPts,
+            zNormalize: settings.zNormalize,
+          }) as AggregatedProps
+        ).clusterAssignment;
+        cache.set(timestamp, clusters);
+      }
+      clustersInTime.push({ timestamp, clusters });
     }
+    // Forget rows that dropped out of the retained buffer.
+    for (const timestamp of cache.keys()) if (!retained.has(timestamp)) cache.delete(timestamp);
 
     return { clustersInTime };
   },

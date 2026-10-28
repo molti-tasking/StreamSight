@@ -3,56 +3,83 @@ import { useClusterProcessingSettingsStore } from "@/store/ClusterProcessingSett
 import { useViewModelStore } from "@/store/useViewModelStore";
 import type { VisualizationSpec } from "vega-embed";
 import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
-import { colorForClusterId } from "../clusterColors";
+import { ANOMALY_COLOR, colorForClusterId } from "../clusterColors";
 import { useMemo } from "react";
+import { changesSinceWindowStart } from "@/lib/clustering/baseline";
 
+const clusterLabel = (id: number) => (id < 0 ? "Outliers" : `Cluster ${id}`);
+
+/**
+ * Box plot per cluster of how far each member stream has moved since the
+ * start of the window ("baseline"). Box = interquartile range with the
+ * median; whiskers reach the furthest member within 1.5 x IQR of the box
+ * (Tukey); points beyond them are drawn individually.
+ */
 export const BaselineClusterChart = () => {
   const clusters = useViewModelStore((state) => state.aggregated);
   const clusterIds = useViewModelStore((state) => state.clusterIds);
+  const anomalies = useViewModelStore((state) => state.anomalies);
   const baselineTolerance = useClusterProcessingSettingsStore(
     (state) => state.baselineTolerance ?? 0
   );
 
-  const values: { group: string; value: number; breach: boolean }[] = useMemo(() => {
-    const arr: { group: string; value: number; breach: boolean }[] = [];
-    clusters.forEach((cluster, index) => {
-      const group = `Cluster ${index}`;
-      const dimensions = Object.keys(cluster[0]).filter(
-        (key) => key !== "timestamp"
-      );
-      const baseline = cluster[0];
-      const dataSet = cluster[cluster.length - 1];
-      dimensions.forEach((dimension) => {
-        const value = dataSet[dimension] - baseline[dimension];
-        const breach =
-          baselineTolerance > 0 && Math.abs(value) > baselineTolerance;
-        arr.push({ group, value, breach });
-      });
-    });
-    return arr;
-  }, [clusters, baselineTolerance]);
+  const groups = useMemo(
+    () => clusters.map((_, index) => clusterLabel(clusterIds[index] ?? index)),
+    [clusters, clusterIds]
+  );
+
+  // Auto-detected anomalies of member streams in this window, by stream.
+  const anomalyLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const a of anomalies) {
+      labels.set(a.dimension, labels.has(a.dimension) ? `${labels.get(a.dimension)}; ${a.label}` : a.label);
+    }
+    return labels;
+  }, [anomalies]);
+
+  const values = useMemo(
+    () =>
+      clusters.flatMap((cluster, index) =>
+        changesSinceWindowStart(cluster).map(({ stream, change }) => ({
+          group: groups[index],
+          stream,
+          value: change,
+          breach: baselineTolerance > 0 && Math.abs(change) > baselineTolerance,
+          anomaly: anomalyLabels.get(stream) ?? "",
+        }))
+      ),
+    [clusters, groups, baselineTolerance, anomalyLabels]
+  );
 
   const spec: VisualizationSpec = useMemo(
     () => ({
       $schema: VL_SCHEMA,
       data: { values },
-      title: "Baseline in %",
+      title: {
+        text: "Change since the start of the window",
+        subtitle:
+          "Box: quartiles and median of the member streams. Whiskers: furthest member within 1.5 × IQR. Points: members beyond the whiskers.",
+        subtitleFontSize: 10,
+      },
       width: "container",
       height: "container",
       background: "transparent",
       layer: [
         {
-          mark: "boxplot",
+          mark: { type: "boxplot", extent: 1.5, median: { color: "black" } },
           encoding: {
-            x: { field: "group", type: "nominal", axis: { title: null } },
-            y: { field: "value", type: "quantitative", axis: { title: null } },
+            x: { field: "group", type: "nominal", sort: groups, axis: { title: null, labelAngle: 0 } },
+            y: {
+              field: "value",
+              type: "quantitative",
+              axis: { title: "Δ since window start (data units)" },
+            },
             color: {
               field: "group",
               type: "nominal",
               scale: {
-                domain: clusters.map((_, index) => `Cluster ${index}`),
-                // Per-cluster color keyed by stable id so colors persist as
-                // cluster order changes between ticks.
+                domain: groups,
+                // Keyed by stable id so colors persist as cluster order changes.
                 range: clusters.map((_, index) =>
                   colorForClusterId(clusterIds[index] ?? index)
                 ),
@@ -62,56 +89,78 @@ export const BaselineClusterChart = () => {
           },
         },
         {
-          mark: { type: "rule", color: "black", strokeWidth: 3 },
+          mark: { type: "rule", color: "black", strokeWidth: 2 },
           encoding: {
             y: { datum: 0, type: "quantitative" },
           },
         },
-        // Tolerance band: dashed red rules at ±tolerance, plus red points for
-        // streams whose deviation from baseline breaches it.
+        // Members with a detected anomaly: triangles, label as tooltip.
+        {
+          transform: [{ filter: "datum.anomaly !== ''" }],
+          mark: {
+            type: "point" as const,
+            shape: "triangle-up",
+            color: ANOMALY_COLOR,
+            filled: true,
+            size: 60,
+          },
+          encoding: {
+            x: { field: "group", type: "nominal" as const, sort: groups },
+            y: { field: "value", type: "quantitative" as const },
+            tooltip: [
+              { field: "stream", type: "nominal" as const },
+              { field: "anomaly", type: "nominal" as const },
+            ],
+          },
+        },
+        // Tolerance band: dashed rules at ±tolerance, plus diamonds for
+        // streams whose change breaches it.
         ...(baselineTolerance > 0
           ? [
               {
-                mark: {
-                  type: "rule" as const,
-                  color: "#DC2626",
-                  strokeDash: [4, 2],
+                data: {
+                  values: [
+                    { y: baselineTolerance, label: `+${baselineTolerance} tolerance` },
+                    { y: -baselineTolerance, label: `−${baselineTolerance} tolerance` },
+                  ],
                 },
-                encoding: {
-                  y: { datum: baselineTolerance, type: "quantitative" as const },
-                },
-              },
-              {
-                mark: {
-                  type: "rule" as const,
-                  color: "#DC2626",
-                  strokeDash: [4, 2],
-                },
-                encoding: {
-                  y: {
-                    datum: -baselineTolerance,
-                    type: "quantitative" as const,
+                layer: [
+                  {
+                    mark: { type: "rule" as const, color: ANOMALY_COLOR, strokeDash: [4, 2] },
+                    encoding: { y: { field: "y", type: "quantitative" as const } },
                   },
-                },
+                  {
+                    mark: { type: "text" as const, color: ANOMALY_COLOR, align: "left" as const, x: 4, dy: -6, fontSize: 10 },
+                    encoding: {
+                      y: { field: "y", type: "quantitative" as const },
+                      text: { field: "label" },
+                    },
+                  },
+                ],
               },
               {
                 transform: [{ filter: "datum.breach" }],
                 mark: {
                   type: "point" as const,
-                  color: "#DC2626",
+                  shape: "diamond",
+                  color: ANOMALY_COLOR,
                   filled: true,
-                  size: 40,
+                  size: 50,
                 },
                 encoding: {
-                  x: { field: "group", type: "nominal" as const },
+                  x: { field: "group", type: "nominal" as const, sort: groups },
                   y: { field: "value", type: "quantitative" as const },
+                  tooltip: [
+                    { field: "stream", type: "nominal" as const },
+                    { field: "value", type: "quantitative" as const, format: ".3~g" },
+                  ],
                 },
               },
             ]
           : []),
       ],
     }),
-    [values, clusters, clusterIds, baselineTolerance]
+    [values, groups, clusters, clusterIds, baselineTolerance]
   );
 
   return (
@@ -119,7 +168,6 @@ export const BaselineClusterChart = () => {
       <VegaChart
         spec={spec}
         actions={true}
-        // style={{ cursor: "pointer" }}
         className={cn(
           "w-full h-full flex flex-1",
           "rounded-sm overflow-hidden min-h-20 h-full"

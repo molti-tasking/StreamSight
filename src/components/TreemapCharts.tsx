@@ -1,29 +1,29 @@
 import * as d3 from "d3";
 import { useMemo } from "react";
 
-type ClusterComponentType = (props: {
-  totalMaxWidth: number;
-  currentWidth: number;
-}) => React.ReactNode;
+import { clusterTransitionName } from "@/lib/viewTransition";
 
 interface TreemapProps {
   height?: number;
   width?: number;
 
   leaves: {
+    /** Stable cluster id: keys the tile so it moves instead of remounting. */
+    id: number;
     name: string;
     /**
      * The significance of the leaf to be indicating the size of the children component.
      */
     significance: number;
-    ClusterComponent: ClusterComponentType;
+    content: React.ReactNode;
   }[];
 }
 
 type LeafDatum = {
+  id: number;
   name: string;
   size: number;
-  ClusterComponent: ClusterComponentType;
+  content: React.ReactNode;
 };
 
 export const TreemapCharts = ({
@@ -32,12 +32,13 @@ export const TreemapCharts = ({
   ...props
 }: TreemapProps) => {
   // Pure layout: d3.treemap computes tile rectangles from the leaves' sizes.
-  const { nodes, maxWidth } = useMemo(() => {
+  const { nodes } = useMemo(() => {
     const data = {
       children: (props.leaves ?? []).map((leaf) => ({
+        id: leaf.id,
         name: leaf.name,
         size: leaf.significance,
-        ClusterComponent: leaf.ClusterComponent,
+        content: leaf.content,
       })),
     } as unknown as LeafDatum;
 
@@ -55,18 +56,19 @@ export const TreemapCharts = ({
       y: d.y0,
       width: d.x1 - d.x0,
       height: d.y1 - d.y0,
-      ClusterComponent: d.data.ClusterComponent,
+      id: d.data.id,
+      content: d.data.content,
     }));
-    const maxWidth = Math.max(0, ...nodes.map((node) => node.width));
-    return { nodes, maxWidth };
+    return { nodes };
   }, [height, width, props.leaves]);
 
   return (
     <div style={{ position: "relative", width, height }}>
-      {nodes.map(({ x, y, width, height, ClusterComponent }, index) => (
+      {nodes.map(({ x, y, width, height, id, content }) => (
         <div
-          key={index}
+          key={id}
           style={{
+            viewTransitionName: clusterTransitionName(id),
             position: "absolute",
             left: x,
             top: y,
@@ -82,7 +84,7 @@ export const TreemapCharts = ({
             transition: "left 500ms ease, top 500ms ease, width 500ms ease, height 500ms ease",
           }}
         >
-          <ClusterComponent currentWidth={width} totalMaxWidth={maxWidth} />
+          {content}
         </div>
       ))}
     </div>

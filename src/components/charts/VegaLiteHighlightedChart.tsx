@@ -1,13 +1,33 @@
-import { cn, escapeVegaString } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { VisualizationSpec } from "vega-embed";
 import { VegaChart, VL_SCHEMA } from "@/components/charts/VegaChart";
-import { colorForClusterId } from "../clusterColors";
+import { colorForClusterId, OUTLIER_COLOR } from "../clusterColors";
 import { ChartProps } from "./ChartProps";
 import { useStreamSelectionStore } from "@/store/useStreamSelectionStore";
-import type { UnitSpec } from "vega-lite/types_unstable/spec/unit.js";
+import { useStreamClustersSettingsStore } from "@/store/useStreamClustersSettingsStore";
 import { LegendButton } from "./LegendButton";
 import { useMemo } from "react";
+import { useTimeAxis } from "./useTimeAxis";
+import { anomalyLayers } from "./anomalyLayers";
 
+/** Pulls the stream name out of a Vega-Lite point-selection signal value. */
+const selectedStream = (value: unknown): string | undefined => {
+  const field = (value as { variable?: unknown } | null)?.variable;
+  const first = Array.isArray(field) ? field[0] : field;
+  return typeof first === "string" ? first : undefined;
+};
+
+/**
+ * The default cluster chart: an envelope (min-max across the cluster's
+ * streams), streams that recently joined the cluster (dashed, in the colour
+ * of the cluster they came from, fading out), streams selected anywhere in
+ * the app (black, labelled), and anomaly markers.
+ *
+ * The Vega-Lite spec only depends on the chart's appearance, not on the
+ * data: values, highlights, selection and scale domains are pushed into the
+ * live view as datasets and params. A streaming tick therefore updates the
+ * existing view instead of rebuilding it (see VegaChart).
+ */
 export const VegaLiteHighlightedChart = ({
   values,
   chartColor,
@@ -25,113 +45,90 @@ export const VegaLiteHighlightedChart = ({
   anomalies?: { timestamp: number; label: string }[];
   chartColor: string;
 }) => {
-  const selectedStreams = useStreamSelectionStore((state) => state.values);
-  const dimensions: string[] = useMemo(
+  const selected = useStreamSelectionStore((state) => state.values);
+  const setHovered = useStreamSelectionStore((state) => state.setHovered);
+  const togglePinned = useStreamSelectionStore((state) => state.togglePinned);
+  const showStreamLabel = useStreamClustersSettingsStore((s) => s.showStreamLabel);
+  const timeAxis = useTimeAxis();
+
+  const dimensions: string[] = useMemo(() => {
+    const keys = new Set<string>();
+    for (const row of values) for (const key in row) if (key !== "timestamp") keys.add(key);
+    return [...keys];
+  }, [values]);
+
+  // Long format: one tuple per stream and tick.
+  const long = useMemo(
     () =>
-      values.length
-        ? Object.keys(values[0]).filter((e) => e !== "timestamp")
-        : [],
-    [values]
+      values.flatMap((row) =>
+        dimensions.flatMap((variable) =>
+          Number.isFinite(row[variable])
+            ? [{ timestamp: row.timestamp, variable, value: row[variable] }]
+            : []
+        )
+      ),
+    [values, dimensions]
   );
+  const highlights = useMemo(
+    () =>
+      (highlightInfo ?? []).map(({ dimension, opacity, lastDimension }) => ({
+        variable: dimension,
+        hlColor: lastDimension !== undefined ? colorForClusterId(lastDimension) : OUTLIER_COLOR,
+        hlOpacity: dimensions.length < 3 ? 1 : opacity,
+      })),
+    [highlightInfo, dimensions.length]
+  );
+  const selection = useMemo(
+    () => selected.filter((s) => dimensions.includes(s)).map((variable) => ({ variable })),
+    [selected, dimensions]
+  );
+  const small = dimensions.length <= 3;
 
-  // This is the heaviest spec in the app and is rebuilt for every cluster on
-  // every streaming tick; memoize on the inputs that actually change.
   const spec: VisualizationSpec = useMemo(() => {
-    let spec: VisualizationSpec;
-
-    if (values?.[0] && Object.keys(values[0]).length === 2) {
-    spec = {
-      $schema: VL_SCHEMA,
-      width: "container",
-      height: "container",
-      background: "transparent",
-
-      padding: 0,
-      // Try to ensure it resizes to fill container space without extra padding
-      autosize: { type: "fit", contains: "padding" },
-      data: { values },
-      transform: [{ fold: dimensions, as: ["variable", "value"] }],
-      mark: { type: "line", color: chartColor },
-      encoding: {
-        x: {
-          field: "timestamp",
-          type: !!saveScreenSpace ? "ordinal" : "temporal",
-          axis: {
-            tickColor: {
-              condition: { value: chartColor, test: "true" },
-              value: chartColor,
-            },
-            gridColor: chartColor,
-            gridOpacity: 0.1,
-            domainColor: chartColor,
-          },
-          title: null,
-        },
-        y: {
-          field: "value",
-          type: "quantitative",
-          scale: { domain: yDomain },
-          title: null,
-
-          axis: {
-            tickColor: {
-              condition: { value: chartColor, test: "true" },
-              value: chartColor,
-            },
-            gridColor: chartColor,
-            gridOpacity: 0.1,
-            domainColor: chartColor,
-            labelPadding: -20,
-            labelOpacity: 0.5,
-            ticks: false,
-            domain: false,
-          },
-        },
-      },
+    const yAxis = {
+      title: null,
+      tickColor: { condition: { value: chartColor, test: "true" }, value: chartColor },
+      gridColor: chartColor,
+      gridOpacity: 0.1,
+      domainColor: chartColor,
+      labelPadding: -20,
+      labelOpacity: 0.5,
+      ticks: false,
+      domain: false,
     };
-  } else {
-    // Each layer folds only the streams it draws. (Folding all streams at
-    // the top level and the highlighted streams again inside a layer created
-    // rows x streams x highlighted-streams tuples on every update, which
-    // exhausted memory with ~200 streams.)
-    const yEncoding = (field: string) => ({
+    const y = (field: string) => ({
       field,
       type: "quantitative" as const,
-      title: null,
-      scale: { domain: yDomain },
-      axis: {
-        tickColor: { condition: { value: chartColor, test: "true" }, value: chartColor },
-        gridColor: chartColor,
-        gridOpacity: 0.1,
-        domainColor: chartColor,
-        labelPadding: -20,
-        labelOpacity: 0.5,
-        ticks: false,
-        domain: false,
-      },
+      scale: { domain: { expr: "[ymin, ymax]" } },
+      axis: yAxis,
     });
-
-    spec = {
+    const isSelected = [
+      { lookup: "variable", from: { data: { values: selection }, key: "variable", fields: ["variable"] }, as: ["isSelected"] },
+      { filter: "datum.isSelected != null" },
+    ];
+    return {
       $schema: VL_SCHEMA,
-
       padding: 0,
       width: "container",
       height: "container",
       background: "transparent",
-      // Try to ensure it resizes to fill container space without extra padding
-      autosize: {
-        type: "fit",
-        contains: "padding",
-      },
-
-      data: { values },
+      autosize: { type: "fit", contains: "padding" },
+      params: [
+        { name: "xmin", value: 0 },
+        { name: "xmax", value: 1 },
+        { name: "ymin", value: 0 },
+        { name: "ymax", value: 1 },
+      ],
+      data: { values: long },
       encoding: {
         x: {
           field: "timestamp",
-          type: !!saveScreenSpace ? "ordinal" : "temporal",
-          title: null,
+          type: saveScreenSpace ? "ordinal" : "temporal",
+          ...(saveScreenSpace
+            ? {}
+            : { scale: { type: timeAxis.scale.type, domain: { expr: "[xmin, xmax]" } } }),
           axis: {
-            ...(saveScreenSpace ? { labelExpr: "" } : {}),
+            ...(saveScreenSpace ? { labelExpr: "", title: null } : timeAxis.axis),
             tickColor: { condition: { value: chartColor, test: "true" }, value: chartColor },
             gridColor: chartColor,
             gridOpacity: 0.1,
@@ -140,10 +137,9 @@ export const VegaLiteHighlightedChart = ({
         },
       },
       layer: [
-        // Envelope: min-max band across all streams of the cluster.
+        // Envelope: min-max band across the cluster's streams.
         {
           transform: [
-            { fold: dimensions, as: ["variable", "value"] },
             {
               aggregate: [
                 { op: "max", field: "value", as: "max_value" },
@@ -153,119 +149,96 @@ export const VegaLiteHighlightedChart = ({
             },
           ],
           mark: { type: "area", color: chartColor, opacity: 0.3 },
+          encoding: { y: y("min_value"), y2: { field: "max_value" } },
+        },
+        // Small clusters: every member as a thin line.
+        ...(small
+          ? [
+              {
+                mark: { type: "line" as const, color: chartColor, strokeWidth: 1 },
+                encoding: { y: y("value"), detail: { field: "variable" } },
+              },
+            ]
+          : []),
+        // Streams that recently joined: dashed, in their previous cluster's
+        // colour (stroke and colour both differ from the envelope).
+        {
+          transform: [
+            {
+              lookup: "variable",
+              from: { data: { values: highlights }, key: "variable", fields: ["hlColor", "hlOpacity"] },
+            },
+            { filter: "datum.hlColor != null" },
+          ],
+          mark: { type: "line", strokeDash: [5, 3], strokeWidth: 1.5 },
           encoding: {
-            y: yEncoding("min_value"),
-            y2: { field: "max_value" },
+            y: y("value"),
+            detail: { field: "variable" },
+            color: { field: "hlColor", type: "nominal", scale: null, legend: null },
+            opacity: { field: "hlOpacity", type: "quantitative", scale: null, legend: null },
           },
         },
-
-        // Streams that recently joined the cluster, drawn in the colour of
-        // the cluster they came from and fading out over the history depth.
-        ...(highlightInfo?.length
+        // Streams hovered or pinned anywhere in the app: black, labelled.
+        {
+          transform: isSelected,
+          mark: { type: "line", color: "black", strokeWidth: 2 },
+          encoding: { y: y("value"), detail: { field: "variable" } },
+        },
+        ...(showStreamLabel
           ? [
               {
                 transform: [
-                  {
-                    fold: highlightInfo.map(({ dimension }) => dimension),
-                    as: ["variable", "value"] as [string, string],
-                  },
+                  ...isSelected,
+                  { joinaggregate: [{ op: "max" as const, field: "timestamp", as: "lastTimestamp" }], groupby: ["variable"] },
+                  { filter: "datum.timestamp === datum.lastTimestamp" },
                 ],
-                mark: { type: "line" },
-                encoding: {
-                  y: yEncoding("value"),
-                  color: {
-                    field: "variable",
-                    type: "nominal",
-                    legend: null,
-                    condition: highlightInfo.map(({ dimension, lastDimension }) => ({
-                      test: `datum.variable === '${escapeVegaString(dimension)}'`,
-                      value:
-                        lastDimension !== undefined
-                          ? colorForClusterId(lastDimension)
-                          : "gray",
-                    })),
-                  },
-                  opacity: {
-                    condition: highlightInfo.map(({ dimension, opacity }) => ({
-                      test: `datum.variable === '${escapeVegaString(dimension)}'`,
-                      value: dimensions.length < 3 ? 1.0 : opacity,
-                    })),
-                    value: 0.3,
-                  },
-                },
-              } as UnitSpec<string>,
-            ]
-          : []),
-
-        // Streams selected in the cluster legend: black line plus label.
-        ...selectedStreams
-          .filter((value) => dimensions.includes(value))
-          .flatMap((value) => [
-            {
-              transform: [{ fold: [value], as: ["variable", "value"] }],
-              mark: { type: "line", color: "black" },
-              encoding: { y: yEncoding("value") },
-            } as UnitSpec<string>,
-            {
-              transform: [{ fold: [value], as: ["variable", "value"] }],
-              mark: { type: "text", align: "right", dy: -5 },
-              encoding: {
-                x: { field: "timestamp", type: "temporal", aggregate: "max" },
-                y: { field: "value", type: "quantitative", aggregate: "max" },
-                text: { value },
+                mark: { type: "text" as const, align: "right" as const, dy: -6, fontWeight: "bold" as const },
+                encoding: { y: y("value"), text: { field: "variable" } },
               },
-            } as UnitSpec<string>,
-          ]),
-
-        // Anomaly markers: dashed red rules at flagged timestamps, with the
-        // auto-generated label as a tooltip.
-        ...(anomalies?.length
-          ? [
-              {
-                data: {
-                  values: anomalies.map((a) => ({
-                    timestamp: a.timestamp,
-                    label: a.label,
-                  })),
-                },
-                mark: {
-                  type: "rule",
-                  color: "#DC2626",
-                  strokeDash: [4, 2],
-                  opacity: 0.8,
-                },
-                encoding: {
-                  tooltip: { field: "label", type: "nominal" },
-                },
-              } as UnitSpec<string>,
             ]
           : []),
+        // Pointer interaction: the nearest stream point is "hovered"; a click
+        // pins it. Invisible, but present for every member.
+        {
+          params: [
+            {
+              name: "hover",
+              select: { type: "point", on: "pointermove", nearest: true, fields: ["variable"], clear: "pointerout" },
+            },
+            { name: "pick", select: { type: "point", on: "click", nearest: true, fields: ["variable"] } },
+          ],
+          mark: { type: "point", opacity: 0, size: 30 },
+          encoding: { y: y("value"), tooltip: [{ field: "variable", title: "stream" }] },
+        },
+        ...anomalyLayers(anomalies?.length ? anomalies : [{ timestamp: NaN, label: "" }]),
       ],
-    };
-  }
-    return spec;
-  }, [
-    values,
-    dimensions,
-    chartColor,
-    yDomain,
-    saveScreenSpace,
-    highlightInfo,
-    selectedStreams,
-    anomalies,
-  ]);
+    } as VisualizationSpec;
+  }, [long, chartColor, saveScreenSpace, highlights, selection, anomalies, timeAxis.scale.type, timeAxis.axis, small, showStreamLabel]);
+
+  const params = useMemo(
+    () => ({ xmin: timeAxis.domain[0], xmax: timeAxis.domain[1], ymin: yDomain[0], ymax: yDomain[1] }),
+    [timeAxis.domain, yDomain]
+  );
+  const signals = useMemo(
+    () => ({
+      hover: (_: string, value: unknown) => setHovered(selectedStream(value)),
+      pick: (_: string, value: unknown) => {
+        const stream = selectedStream(value);
+        if (stream) togglePinned(stream);
+      },
+    }),
+    [setHovered, togglePinned]
+  );
 
   return (
     <div className={"flex-1 rounded-sm min-h-20 h-full relative"}>
       <LegendButton dimensions={dimensions}>
         <VegaChart
           spec={spec}
+          params={params}
+          signals={signals}
           actions={false}
-          className={cn(
-            className,
-            "w-full h-full flex flex-1",
-            "rounded-sm min-h-20 h-full"
-          )}
+          className={cn(className, "w-full h-full flex flex-1", "rounded-sm min-h-20 h-full")}
         />
       </LegendButton>
     </div>
