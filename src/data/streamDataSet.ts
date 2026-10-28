@@ -36,7 +36,7 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
   },
   "S&P500": {
     label: "S&P 500",
-    description: "500 parallel time series of S&P 500 stock values on a daily basis.",
+    description: "502 S&P 500 stock price series, 3,768 trading days (2010–2024).",
     url: "/data/20250228_stock_sp500_data.json",
     nativeIntervalMs: 24 * 3600 * 1000,
     playbackIntervalMs: 1000,
@@ -46,7 +46,7 @@ export const dataSets: Record<DataSet, DataSetInfo> = {
   GDP: {
     label: "GDP (non-streaming demo)",
     description:
-      "212 countries' yearly GDP, 1970–2022. Yearly data is not a real-time stream; included only as a small demo.",
+      "220 yearly GDP series (countries and regions), 1970–2022 (53 rows). Yearly data is not a real-time stream; included only as a small demo.",
     url: "/data/20250228_un_gdp_data.json",
     nativeIntervalMs: 365 * 24 * 3600 * 1000,
     playbackIntervalMs: 1000,
