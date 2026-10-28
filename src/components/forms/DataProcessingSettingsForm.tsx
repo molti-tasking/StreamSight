@@ -39,9 +39,6 @@ export const DataProcessingSettingsForm = ({
   onClose: () => void;
 }) => {
   const viewSettings = useClusterProcessingSettingsStore();
-  // const addSettingUpdateEvent = useExploratoryStore(
-  //   (state) => state.addSettingUpdateEvent
-  // );
   const { updateSettings, ...settings } = viewSettings;
 
   const form = useForm<DataProcessingSettings>({
@@ -52,7 +49,6 @@ export const DataProcessingSettingsForm = ({
   const eps = useWatch({ control: form.control, name: "eps" });
 
   const onSubmit = (data: DataProcessingSettings) => {
-    // addSettingUpdateEvent(settings, data);
     updateSettings((prevSettings) => ({ ...prevSettings, ...data }));
 
     onClose();

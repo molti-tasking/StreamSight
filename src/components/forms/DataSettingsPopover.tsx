@@ -71,7 +71,8 @@ const DataSimulationSettingsForm = ({ onClose }: { onClose: () => void }) => {
   const onSubmit = (data: FormValues) => {
     const { rows, columns, streamingInterval } = data;
 
-    // Legacy popover (only used by the unused Navigation component): loads
+    // Legacy popover, not imported anywhere (its only user, Navigation, was
+    // removed with the AI experiment); loads
     // a seeded synthetic stream of the requested size.
     void load({
       kind: "synthetic",
