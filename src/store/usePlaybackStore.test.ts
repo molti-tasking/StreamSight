@@ -79,3 +79,11 @@ test("exposes the synthetic ground truth", async () => {
   expect(truth?.anomalies).toHaveLength(2);
   expect(truth?.switches).toHaveLength(1);
 });
+
+test("seek shows the source up to a row and pauses", async () => {
+  await usePlaybackStore.getState().load(source, { autoplay: true });
+  usePlaybackStore.getState().seek(12);
+  expect(usePlaybackStore.getState()).toMatchObject({ status: "paused", position: 12 });
+  expect(useRawDataStore.getState().values).toHaveLength(12);
+  expect(useRawDataStore.getState().values.at(-1)?.timestamp).toBe(1100);
+});

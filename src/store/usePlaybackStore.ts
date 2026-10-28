@@ -41,6 +41,8 @@ interface PlaybackStore {
   /** Pauses and emits exactly one row. */
   step: () => void;
   setSpeed: (speed: PlaybackSpeed) => void;
+  /** Pauses and shows the source up to row `position` (for shared views). */
+  seek: (position: number) => void;
 }
 
 // The full source lives outside React state; only the emitted rows go into
@@ -192,6 +194,14 @@ export const usePlaybackStore = create<PlaybackStore>((set, get) => {
       if (get().status === "loading" || get().total === 0) return;
       get().pause();
       emit();
+    },
+
+    seek: (position) => {
+      get().pause();
+      const end = Math.max(0, Math.min(get().total, Math.round(position)));
+      useRawDataStore.getState().reset(useRawDataStore.getState().dimensions);
+      if (end > 0) useRawDataStore.getState().append(rows.slice(0, end));
+      set({ position: end, status: end >= get().total && end > 0 ? "ended" : "paused" });
     },
 
     setSpeed: (speed) => {

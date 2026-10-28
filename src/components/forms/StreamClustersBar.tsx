@@ -1,5 +1,7 @@
 import { withViewTransition } from "@/lib/viewTransition";
 import { useState } from "react";
+import { useInteractionLogStore } from "@/store/useInteractionLogStore";
+import { streamPosition } from "@/lib/study/interactionLogging";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import {
@@ -350,8 +352,13 @@ export const StreamClustersBar = () => {
                   <li key={`${key}-${i}`}>
                     <button
                       type="button"
+                      // Acknowledging is logged for user studies.
                       onClick={() => {
                         setAcknowledged((prev) => new Set(prev).add(key));
+                        useInteractionLogStore.getState().log("anomaly-ack", {
+                          anomaly: { dimension: a.dimension, timestamp: a.timestamp, type: a.type, label: a.label },
+                          ...streamPosition(),
+                        });
                       }}
                       title="Click to acknowledge"
                       className={cn(

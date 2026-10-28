@@ -12,6 +12,9 @@ import { StreamClustersBar } from "@/components/forms/StreamClustersBar";
 import { TimelineOverview } from "@/components/TimelineOverview";
 import { PlaybackControls } from "@/components/PlaybackControls";
 import { PerfOverlay } from "@/components/PerfOverlay";
+import { StudyControls } from "@/components/StudyControls";
+import { ExportViewButtons } from "@/components/ExportViewButtons";
+import { UrlStateSync } from "@/components/UrlStateSync";
 import { TreemapLayout } from "@/components/TreemapLayout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,6 +45,8 @@ export default function StreamClustersPage() {
               </span>
             </Link>
             <PlaybackControls />
+            <StudyControls />
+            <ExportViewButtons />
           </div>
           <div className="flex flex-row justify-end gap-2 items-center my-1">
             <div className="text-muted-foreground">
@@ -73,6 +78,7 @@ export default function StreamClustersPage() {
         </div>
       </div>
       <PerfOverlay />
+      <UrlStateSync />
     </>
   );
 }
