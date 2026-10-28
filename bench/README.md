@@ -210,7 +210,19 @@ update includes it; `latencyMs` includes that wait. A newer update that
 starts before an older one is painted supersedes it; superseded updates have
 no render time and are not counted.
 
-Results: see `bench/results-e2e.csv` (`node bench/summarize.mjs e2e`).
+Results (`node bench/summarize.mjs e2e`) are summarised in
+`docs/revision-notes.md` ("End-to-end results"). In short:
+- up to 200 streams, a row is painted within 0.1–0.24 s (p50) in every
+  layout;
+- at 500 streams, the line-chart layouts take 0.14–0.45 s (p50) to
+  re-render, and rendering dominates;
+- compute p95 is ≤ 0.29 s everywhere.
+
+`bench/results-e2e-pre-ui-revision.csv` is the same benchmark run on the
+code before the UI revision (commit 5f1c2ba plus the item-14
+instrumentation): the clusters-over-time pass shared the live view's worker
+and re-clustered every retained row, giving compute p95 of up to 19.3 s.
+The final code caches those windows and runs them on a second worker.
 
 ## Limitations
 
